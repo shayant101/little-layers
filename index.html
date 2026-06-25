@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="icon" type="image/png" href="photos/logo_icon.png" />
+<link rel="apple-touch-icon" href="photos/logo_icon.png" />
 <style>
   :root{
     --paper:#FFFCF8; --ink:#2B2530; --muted:#7A7280;
@@ -39,10 +41,10 @@
 
   header{position:sticky;top:0;z-index:40;background:rgba(255,252,248,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
   .nav{display:flex;align-items:center;justify-content:space-between;padding:16px 0}
-  .logo{display:flex;align-items:center;gap:11px}
-  .logo svg{width:30px;height:30px}
-  .logo .name{font-family:'Poppins';font-weight:600;font-size:20px;letter-spacing:-.01em}
-  .logo .name b{font-weight:700}
+  .logo{display:flex;align-items:center;gap:10px}
+  .logo-mark{height:40px;width:auto;display:block}
+  .logo .name{font-family:'Poppins';font-weight:500;font-size:20px;letter-spacing:.01em;color:var(--ink)}
+  .logo .name b{font-weight:600}
   .nav-links{display:flex;align-items:center;gap:30px}
   .nav-links a.page{font-size:14.5px;font-weight:500;color:var(--muted);transition:color .15s}
   .nav-links a.page:hover{color:var(--ink)}
@@ -179,13 +181,8 @@
 <header>
   <div class="wrap nav">
     <a href="#top" class="logo" aria-label="Little Layers home">
-      <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect x="9" y="20" width="42" height="8" rx="4" fill="#B49BDD"/>
-        <rect x="13" y="30" width="34" height="8" rx="4" fill="#EAC15D"/>
-        <rect x="17" y="40" width="26" height="8" rx="4" fill="#79C2D2"/>
-        <circle cx="30" cy="13" r="3.4" fill="#E8688F"/>
-      </svg>
-      <span class="name">little&nbsp;<b>layers</b></span>
+      <img class="logo-mark" src="photos/logo_icon.png" alt="Little Layers" />
+      <span class="name">little&nbsp;layers</span>
     </a>
     <nav class="nav-links">
       <a href="#shop" class="page">Shop</a>
@@ -261,13 +258,8 @@
     <div class="foot">
       <div>
         <div class="logo">
-          <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <rect x="9" y="20" width="42" height="8" rx="4" fill="#B49BDD"/>
-            <rect x="13" y="30" width="34" height="8" rx="4" fill="#EAC15D"/>
-            <rect x="17" y="40" width="26" height="8" rx="4" fill="#79C2D2"/>
-            <circle cx="30" cy="13" r="3.4" fill="#E8688F"/>
-          </svg>
-          <span class="name">little&nbsp;<b>layers</b></span>
+          <img class="logo-mark" src="photos/logo_icon.png" alt="Little Layers" />
+          <span class="name">little&nbsp;layers</span>
         </div>
         <p class="tagline">Modern, functional 3D-printed pieces for kids. Made to order in Irvine, CA.</p>
       </div>
