@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Little Layers — modern 3D-printed pieces for kids</title>
+<meta name="description" content="Modern, functional 3D-printed organizers, caddies and trays for kids. Bright, durable, made to order in Irvine, CA — and personalizable with a name." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --paper:#FFFCF8; --ink:#2B2530; --muted:#7A7280;
+    --rose:#E8688F; --rose-deep:#D2497A;
+    --peach:#F3A07C; --gold:#EAC15D; --sky:#79C2D2; --lilac:#B49BDD;
+    --line:#F0E7EE; --card:#FFFFFF;
+    --radius:18px; --radius-sm:12px;
+    --shadow:0 14px 36px rgba(80,40,70,.10);
+    --shadow-sm:0 6px 18px rgba(80,40,70,.07);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  h1,h2,h3,.display{font-family:'Poppins',sans-serif;letter-spacing:-.02em}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 24px}
+  .eyebrow{font-size:12.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--rose-deep)}
+  .btn{display:inline-flex;align-items:center;gap:8px;border:none;cursor:pointer;font-family:'Inter';
+    font-weight:600;font-size:15px;padding:13px 24px;border-radius:999px;transition:transform .15s,box-shadow .15s,background .15s}
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--ink);color:#fff}
+  .btn-primary:hover{background:#3d3543}
+  .btn-outline{background:rgba(255,255,255,.7);color:var(--ink);border:1.5px solid #E3D8E1;backdrop-filter:blur(4px)}
+  .btn-outline:hover{border-color:var(--ink)}
+  .icn{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+
+  .announce{background:var(--ink);color:#fff;text-align:center;font-size:13px;letter-spacing:.02em;padding:9px 16px}
+  .announce b{font-weight:600}
+
+  header{position:sticky;top:0;z-index:40;background:rgba(255,252,248,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:16px 0}
+  .logo{display:flex;align-items:center;gap:11px}
+  .logo svg{width:30px;height:30px}
+  .logo .name{font-family:'Poppins';font-weight:600;font-size:20px;letter-spacing:-.01em}
+  .logo .name b{font-weight:700}
+  .nav-links{display:flex;align-items:center;gap:30px}
+  .nav-links a.page{font-size:14.5px;font-weight:500;color:var(--muted);transition:color .15s}
+  .nav-links a.page:hover{color:var(--ink)}
+  .cart-btn{position:relative;background:none;border:none;cursor:pointer;color:var(--ink);display:grid;place-items:center;padding:6px}
+  .cart-btn .icn{width:22px;height:22px}
+  .cart-count{position:absolute;top:-2px;right:-4px;background:var(--rose);color:#fff;font-size:11px;font-weight:700;
+    min-width:18px;height:18px;border-radius:999px;display:grid;place-items:center;padding:0 4px}
+
+  /* ===== HERO (interactive stage) ===== */
+  .hero{position:relative;overflow:hidden}
+  .stage{position:relative;height:90vh;min-height:620px;max-height:860px;width:100%;
+    background:
+      radial-gradient(60% 50% at 20% 30%, rgba(232,104,143,.14), transparent 70%),
+      radial-gradient(55% 50% at 82% 28%, rgba(121,194,210,.16), transparent 70%),
+      radial-gradient(60% 55% at 70% 85%, rgba(180,155,221,.16), transparent 70%),
+      radial-gradient(55% 50% at 25% 80%, rgba(234,193,93,.14), transparent 70%),
+      linear-gradient(180deg,#FFF6FA,#FBFAF6);
+    overflow:hidden;touch-action:pan-y}
+  .float{position:absolute;top:0;left:0;will-change:transform;cursor:grab;touch-action:none;user-select:none;-webkit-user-drag:none;
+    filter:drop-shadow(0 24px 30px rgba(80,40,70,.22));transition:filter .2s}
+  .float:active{cursor:grabbing}
+  .float img{width:100%;height:auto;display:block;pointer-events:none;-webkit-user-drag:none}
+  .hero-content{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;
+    text-align:center;z-index:6;padding:0 22px;pointer-events:none}
+  .hero-content>*{pointer-events:auto}
+  .hero-content h1{font-size:clamp(38px,6vw,68px);font-weight:700;line-height:1.04;margin:16px 0 0;max-width:14ch}
+  .hero-content h1 .accent{color:var(--rose-deep)}
+  .hero-content .sub{margin:18px 0 26px;font-size:clamp(16px,1.6vw,19px);color:var(--muted);max-width:440px}
+  .hero-cta{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+  .hint{margin-top:22px;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:7px;opacity:.85}
+  .hint .icn{width:15px;height:15px;stroke:var(--rose)}
+  .eyebrow-pill{background:rgba(255,255,255,.7);backdrop-filter:blur(4px);padding:7px 15px;border-radius:999px;box-shadow:var(--shadow-sm)}
+
+  /* feature band */
+  .features{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff}
+  .features .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;padding:26px 24px}
+  .feat{display:flex;align-items:center;gap:12px}
+  .feat .ic{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;flex-shrink:0}
+  .feat .ic .icn{width:20px;height:20px;stroke:#fff}
+  .feat:nth-child(1) .ic{background:var(--rose)} .feat:nth-child(2) .ic{background:var(--sky)}
+  .feat:nth-child(3) .ic{background:var(--gold)} .feat:nth-child(4) .ic{background:var(--lilac)}
+  .feat b{display:block;font-size:14px;font-weight:600}
+  .feat span{font-size:12.5px;color:var(--muted)}
+
+  section{padding:72px 0}
+  .sec-head{max-width:560px;margin:0 auto 42px;text-align:center}
+  .sec-head h2{font-size:clamp(28px,3.6vw,40px);font-weight:700;margin:10px 0 0}
+  .sec-head p{color:var(--muted);margin-top:12px;font-size:16.5px}
+
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s}
+  .card:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+  .panel{position:relative;aspect-ratio:1/1;overflow:hidden;background:linear-gradient(150deg,#FBE3EC,#E7F1F6)}
+  .panel img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .4s}
+  .card:hover .panel img{transform:scale(1.04)}
+  .panel .tag{position:absolute;top:14px;left:14px;background:#fff;color:var(--ink);font-size:11px;font-weight:600;
+    letter-spacing:.04em;padding:5px 11px;border-radius:999px;box-shadow:var(--shadow-sm);z-index:2}
+  .card .body{padding:18px 20px 22px;display:flex;flex-direction:column;flex:1}
+  .card .cat{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .card h3{font-family:'Poppins';font-weight:600;font-size:20px;margin-top:3px}
+  .card .desc{color:var(--muted);font-size:14px;margin-top:7px;flex:1}
+  .card .priced{display:flex;align-items:baseline;gap:6px;margin-top:14px}
+  .price{font-family:'Poppins';font-weight:600;font-size:19px}
+  .price small{font-family:'Inter';color:var(--muted);font-weight:500;font-size:12px}
+  .perso{margin-top:14px}
+  .perso label{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--rose-deep);margin-bottom:6px}
+  .perso label .icn{width:14px;height:14px;stroke:var(--rose-deep)}
+  .perso input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font-family:'Inter';font-size:14px;background:#fff;transition:border .15s}
+  .perso input:focus{outline:none;border-color:var(--rose)}
+  .card .add{margin-top:16px;width:100%;justify-content:center}
+
+  .about{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .about .wrap{display:grid;grid-template-columns:.9fr 1.1fr;gap:48px;align-items:center}
+  .about-photo{border-radius:24px;overflow:hidden;box-shadow:var(--shadow);aspect-ratio:3/4}
+  .about-photo img{width:100%;height:100%;object-fit:cover;display:block}
+  .about h2{font-size:clamp(26px,3.4vw,36px);font-weight:700}
+  .about p{color:var(--muted);font-size:16.5px;margin-top:14px}
+  .about .quote{font-family:'Poppins';font-weight:500;font-size:18px;color:var(--ink);margin-top:18px;padding-left:18px;border-left:3px solid var(--rose)}
+
+  footer{padding:54px 0 30px}
+  .foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:26px;align-items:flex-start}
+  .foot .tagline{color:var(--muted);font-size:14px;margin-top:10px;max-width:260px}
+  .socials{display:flex;gap:10px}
+  .socials a{width:42px;height:42px;border-radius:11px;border:1px solid var(--line);display:grid;place-items:center;transition:.15s}
+  .socials a:hover{border-color:var(--ink);transform:translateY(-2px)}
+  .socials .icn{width:19px;height:19px;stroke:var(--ink)}
+  .foot-bottom{border-top:1px solid var(--line);margin-top:34px;padding-top:20px;font-size:13px;color:var(--muted)}
+
+  .overlay{position:fixed;inset:0;background:rgba(43,37,48,.42);opacity:0;visibility:hidden;transition:.25s;z-index:50}
+  .overlay.open{opacity:1;visibility:visible}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:400px;max-width:92vw;background:var(--paper);z-index:60;
+    transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-12px 0 44px rgba(0,0,0,.16)}
+  .drawer.open{transform:translateX(0)}
+  .drawer .dhead{padding:22px 24px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+  .drawer .dhead h3{font-size:19px;font-weight:600}
+  .x{background:none;border:none;cursor:pointer;color:var(--muted);display:grid;place-items:center;padding:4px}
+  .x .icn{width:22px;height:22px}
+  .items{flex:1;overflow-y:auto;padding:16px 24px}
+  .ci{display:flex;gap:13px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .ci .sw{width:52px;height:52px;border-radius:11px;flex-shrink:0;display:grid;place-items:center;color:#fff;font-family:'Poppins';font-weight:600;font-size:20px;overflow:hidden}
+  .ci .sw img{width:100%;height:100%;object-fit:cover}
+  .ci .info{flex:1;min-width:0}
+  .ci .info b{font-weight:600;font-size:14.5px}
+  .ci .info .pn{font-size:12.5px;color:var(--rose-deep);margin-top:2px}
+  .ci .info .pr{font-family:'Poppins';font-size:14px;margin-top:4px}
+  .qty{display:flex;align-items:center;gap:10px;margin-top:8px}
+  .qty button{width:26px;height:26px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:600;cursor:pointer;font-size:15px;line-height:1}
+  .qty span{font-weight:600;min-width:16px;text-align:center;font-size:14px}
+  .ci .rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;align-self:flex-start;padding:2px}
+  .ci .rm:hover{color:var(--rose-deep)}
+  .empty{text-align:center;color:var(--muted);padding:60px 24px}
+  .empty .icn{width:48px;height:48px;stroke:#D9CDD7;margin:0 auto 14px}
+  .foot-cart{padding:20px 24px 26px;border-top:1px solid var(--line)}
+  .totrow{display:flex;justify-content:space-between;font-family:'Poppins';font-size:18px;font-weight:600}
+  .foot-cart .note{font-size:12.5px;color:var(--muted);margin:8px 0 16px}
+  .checkout{width:100%;justify-content:center;font-size:15.5px;padding:15px}
+  .pay-msg{font-size:13px;text-align:center;margin-top:12px;color:var(--rose-deep);font-weight:600;display:none}
+
+  @media(max-width:880px){
+    .features .wrap{grid-template-columns:1fr 1fr;gap:22px}
+    .grid{grid-template-columns:1fr 1fr}
+    .about .wrap{grid-template-columns:1fr;gap:30px}
+    .nav-links a.page{display:none}
+    .stage{height:78vh;min-height:560px}
+  }
+  @media(max-width:560px){.grid{grid-template-columns:1fr}.features .wrap{grid-template-columns:1fr}}
+  @media(prefers-reduced-motion:reduce){.float{transition:none}}
+</style>
+</head>
+<body>
+
+<div class="announce">Handmade &amp; made to order in Irvine, CA &nbsp;·&nbsp; <b>Free local pickup</b></div>
+
+<header>
+  <div class="wrap nav">
+    <a href="#top" class="logo" aria-label="Little Layers home">
+      <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="9" y="20" width="42" height="8" rx="4" fill="#B49BDD"/>
+        <rect x="13" y="30" width="34" height="8" rx="4" fill="#EAC15D"/>
+        <rect x="17" y="40" width="26" height="8" rx="4" fill="#79C2D2"/>
+        <circle cx="30" cy="13" r="3.4" fill="#E8688F"/>
+      </svg>
+      <span class="name">little&nbsp;<b>layers</b></span>
+    </a>
+    <nav class="nav-links">
+      <a href="#shop" class="page">Shop</a>
+      <a href="#about" class="page">Our story</a>
+      <a href="https://www.instagram.com/littlelayersbyirha/" target="_blank" rel="noopener" class="page">Instagram</a>
+      <button class="cart-btn" onclick="openCart()" aria-label="Open cart">
+        <svg class="icn" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span class="cart-count" id="cartCount" style="display:none">0</span>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<a id="top"></a>
+<section class="hero">
+  <div class="stage" id="stage">
+    <!-- floating product cutouts: data-x/data-y are % of stage (center anchored), data-depth parallax, data-scale size -->
+    <div class="float" data-x="15" data-y="30" data-depth="1.1" data-scale="1.15"><img src="photos/cut_bloomstack.png" alt="BloomStack organizer" /></div>
+    <div class="float" data-x="84" data-y="24" data-depth="0.8" data-scale="0.8"><img src="photos/cut_carrycaddy.png" alt="Carry caddy" /></div>
+    <div class="float" data-x="86" data-y="70" data-depth="1.15" data-scale="0.92"><img src="photos/cut_caddy.png" alt="Personalized caddy" /></div>
+    <div class="float" data-x="14" data-y="74" data-depth="0.7" data-scale="1.2"><img src="photos/cut_doodledish.png" alt="The Doodle Dish" /></div>
+    <div class="float" data-x="50" data-y="90" data-depth="0.5" data-scale="0.85"><img src="photos/cut_purplecaddy.png" alt="Purple caddy" /></div>
+    <div class="float" data-x="92" data-y="46" data-depth="0.95" data-scale="0.62"><img src="photos/cut_lilaccaddy.png" alt="Lilac caddy" /></div>
+
+    <div class="hero-content">
+      <span class="eyebrow eyebrow-pill">Modern 3D-printed pieces for kids</span>
+      <h1>Bright, functional design <span class="accent">made to be used.</span></h1>
+      <p class="sub">Thoughtfully designed organizers and caddies — durable, colorful, and personalizable with your child's name.</p>
+      <div class="hero-cta">
+        <a href="#shop" class="btn btn-primary">Shop the collection</a>
+        <a href="#about" class="btn btn-outline">Our story</a>
+      </div>
+      <span class="hint"><svg class="icn" viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><path d="M2 12h20"/><path d="M12 2v20"/></svg>Grab the pieces and toss them around</span>
+    </div>
+  </div>
+</section>
+
+<div class="features">
+  <div class="wrap">
+    <div class="feat"><div class="ic"><svg class="icn" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><div><b>Made to order</b><span>Printed just for you</span></div></div>
+    <div class="feat"><div class="ic"><svg class="icn" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div><div><b>Personalized</b><span>Add a name</span></div></div>
+    <div class="feat"><div class="ic"><svg class="icn" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg></div><div><b>Built to last</b><span>Sturdy &amp; safe</span></div></div>
+    <div class="feat"><div class="ic"><svg class="icn" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="m4.9 4.9 2.1 2.1"/><path d="m17 17 2.1 2.1"/><path d="M2 12h3"/><path d="M19 12h3"/><path d="m4.9 19.1 2.1-2.1"/><path d="m17 7 2.1-2.1"/></svg></div><div><b>Bright colors</b><span>Kid-approved</span></div></div>
+  </div>
+</div>
+
+<section id="shop">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">The collection</span>
+      <h2>Pieces they'll reach for every day</h2>
+      <p>Each design is printed to order. Add a name where you'd like to make it theirs.</p>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+</section>
+
+<section class="about" id="about">
+  <div class="wrap">
+    <div class="about-photo"><img src="photos/founder.jpg" alt="Irha, founder of Little Layers, holding her caddies" /></div>
+    <div>
+      <span class="eyebrow">Our story</span>
+      <h2>Big ideas, one layer at a time</h2>
+      <p>Little Layers began with a simple belief: the things kids use every day should be fun and genuinely useful. Every organizer, caddy and tray is designed and 3D-printed to order — bright, sturdy, and built to keep crayons, markers and treasures in their place.</p>
+      <p>Founded by Irha, age 7, in Irvine, California.</p>
+      <p class="quote">Modern &amp; functional 3D prints, made with care.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <div class="logo">
+          <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="9" y="20" width="42" height="8" rx="4" fill="#B49BDD"/>
+            <rect x="13" y="30" width="34" height="8" rx="4" fill="#EAC15D"/>
+            <rect x="17" y="40" width="26" height="8" rx="4" fill="#79C2D2"/>
+            <circle cx="30" cy="13" r="3.4" fill="#E8688F"/>
+          </svg>
+          <span class="name">little&nbsp;<b>layers</b></span>
+        </div>
+        <p class="tagline">Modern, functional 3D-printed pieces for kids. Made to order in Irvine, CA.</p>
+      </div>
+      <div class="socials">
+        <a href="https://www.instagram.com/littlelayersbyirha/" target="_blank" rel="noopener" aria-label="Instagram">
+          <svg class="icn" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+        </a>
+        <a href="#" target="_blank" rel="noopener" aria-label="TikTok" id="tiktokLink">
+          <svg class="icn" viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="foot-bottom">© <span id="yr"></span> Little Layers · Designed &amp; printed with care.</div>
+  </div>
+</footer>
+
+<div class="overlay" id="overlay" onclick="closeCart()"></div>
+<aside class="drawer" id="drawer" aria-label="Shopping cart">
+  <div class="dhead"><h3>Your bag</h3>
+    <button class="x" onclick="closeCart()" aria-label="Close"><svg class="icn" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+  </div>
+  <div class="items" id="cartItems"></div>
+  <div class="foot-cart">
+    <div class="totrow"><span>Total</span><span id="cartTotal">$0.00</span></div>
+    <p class="note">Shipping &amp; taxes calculated at checkout. Personalized items are made to order.</p>
+    <button class="btn btn-primary checkout" onclick="checkout()" id="checkoutBtn">
+      <svg class="icn" viewBox="0 0 24 24" style="stroke:#fff"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Checkout
+    </button>
+    <p class="pay-msg" id="payMsg"></p>
+  </div>
+</aside>
+
+<script>
+/* =========================================================
+   PRODUCTS — edit prices, names & photos here
+   - price: dollars (PLACEHOLDER — set your real prices)
+   - personalize: true adds a "Name to print" field
+   - img: product photo (in /photos)
+   ========================================================= */
+const PRODUCTS = [
+  { id:'bloomstack', name:'BloomStack Organizer', price:24, cat:'Desk organizer',
+    desc:'A flower-shaped, stackable organizer for pens, markers and small treasures.',
+    img:'photos/bloomstack.jpg', accent:'#E8688F', tag:'Bestseller', personalize:false },
+  { id:'caddy', name:'Personalized Caddy', price:22, cat:'Art supplies',
+    desc:'A sturdy caddy with compartments for crayons & markers, printed with a name.',
+    img:'photos/caddy.jpg', accent:'#F3A07C', tag:'Personalized', personalize:true },
+  { id:'doodledish', name:'The Doodle Dish', price:18, cat:'Catch-all tray',
+    desc:'A wavy tray for doodling supplies, beads and tiny bits. Keeps the desk tidy.',
+    img:'photos/doodledish.jpg', accent:'#B49BDD', tag:'New', personalize:false },
+  { id:'carrycaddy', name:'Carry Caddy', price:26, cat:'Grab & go',
+    desc:'A caddy with a handle and compartments — perfect for art on the move.',
+    img:'photos/carrycaddy.jpg', accent:'#F3A07C', tag:'', personalize:true },
+  { id:'purplecaddy', name:'Ribbed Caddy', price:26, cat:'Grab & go',
+    desc:'A ridged, oval caddy with a sturdy handle — roomy enough for the whole kit.',
+    img:'photos/purplecaddy.jpg', accent:'#B49BDD', tag:'', personalize:false },
+  { id:'lilaccaddy', name:'Lilac Caddy', price:24, cat:'Art supplies',
+    desc:'A soft-lilac caddy with divided sections — cute pens not included (but welcome).',
+    img:'photos/lilaccaddy.jpg', accent:'#B49BDD', tag:'', personalize:true },
+];
+
+let cart = [];
+function money(n){ return '$' + n.toFixed(2); }
+
+function renderShop(){
+  document.getElementById('grid').innerHTML = PRODUCTS.map(p => `
+    <div class="card">
+      <div class="panel">
+        ${p.tag ? `<span class="tag">${p.tag}</span>` : ''}
+        <img src="${p.img}" alt="${p.name}" loading="lazy">
+      </div>
+      <div class="body">
+        <span class="cat">${p.cat}</span>
+        <h3>${p.name}</h3>
+        <p class="desc">${p.desc}</p>
+        <div class="priced"><span class="price">${money(p.price)}</span><small>+ shipping</small></div>
+        ${p.personalize ? `
+          <div class="perso">
+            <label for="pn-${p.id}"><svg class="icn" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Name to print</label>
+            <input id="pn-${p.id}" type="text" maxlength="14" placeholder="e.g. Irha" />
+          </div>` : ''}
+        <button class="btn btn-primary add" onclick="addToCart('${p.id}')">Add to bag</button>
+      </div>
+    </div>`).join('');
+}
+
+function addToCart(id){
+  const p = PRODUCTS.find(x=>x.id===id);
+  let personalName = '';
+  if(p.personalize){
+    const inp = document.getElementById('pn-'+id);
+    personalName = (inp && inp.value.trim()) || '';
+    if(!personalName){ inp.focus(); inp.style.borderColor='var(--rose)'; inp.placeholder='Please add a name'; return; }
+    inp.value=''; inp.style.borderColor='';
+  }
+  const key = id + '|' + personalName.toLowerCase();
+  const existing = cart.find(c => (c.id+'|'+c.personalName.toLowerCase())===key);
+  if(existing){ existing.qty++; }
+  else { cart.push({id:p.id,name:p.name,price:p.price,img:p.img,qty:1,personalName}); }
+  updateCart(); openCart();
+}
+function changeQty(i,d){ cart[i].qty+=d; if(cart[i].qty<=0) cart.splice(i,1); updateCart(); }
+function removeItem(i){ cart.splice(i,1); updateCart(); }
+
+function updateCart(){
+  const count = cart.reduce((s,c)=>s+c.qty,0);
+  const total = cart.reduce((s,c)=>s+c.qty*c.price,0);
+  const cc = document.getElementById('cartCount');
+  cc.textContent = count; cc.style.display = count? 'grid':'none';
+  document.getElementById('cartTotal').textContent = money(total);
+  const box = document.getElementById('cartItems');
+  const btn = document.getElementById('checkoutBtn');
+  if(!cart.length){
+    box.innerHTML = `<div class="empty"><svg class="icn" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Your bag is empty.</div>`;
+    btn.disabled = true; btn.style.opacity = .5; return;
+  }
+  btn.disabled = false; btn.style.opacity = 1;
+  box.innerHTML = cart.map((c,i)=>`
+    <div class="ci">
+      <div class="sw"><img src="${c.img}" alt="${c.name}"></div>
+      <div class="info">
+        <b>${c.name}</b>
+        ${c.personalName? `<div class="pn">Name: "${c.personalName}"</div>`:''}
+        <div class="pr">${money(c.price)}</div>
+        <div class="qty">
+          <button onclick="changeQty(${i},-1)" aria-label="Decrease">−</button>
+          <span>${c.qty}</span>
+          <button onclick="changeQty(${i},1)" aria-label="Increase">+</button>
+        </div>
+      </div>
+      <button class="rm" onclick="removeItem(${i})">Remove</button>
+    </div>`).join('');
+}
+
+function openCart(){ document.getElementById('drawer').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+function closeCart(){ document.getElementById('drawer').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+
+async function checkout(){
+  if(!cart.length) return;
+  const msg = document.getElementById('payMsg');
+  const btn = document.getElementById('checkoutBtn');
+  btn.textContent = 'Connecting to Stripe…';
+  try{
+    const res = await fetch('/api/create-checkout-session', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ items: cart })
+    });
+    if(!res.ok) throw new Error('not-connected');
+    const data = await res.json();
+    if(data.url){ window.location = data.url; return; }
+    throw new Error('no-url');
+  }catch(e){
+    msg.style.display='block';
+    msg.textContent='Payments aren’t switched on yet — see README to connect Stripe.';
+    btn.textContent='Checkout';
+  }
+}
+
+/* =========================================================
+   INTERACTIVE HERO — float, parallax, drag-and-toss, scroll
+   ========================================================= */
+(function(){
+  const stage = document.getElementById('stage');
+  if(!stage) return;
+  const floats = Array.from(stage.querySelectorAll('.float'));
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let mouseX = 0, mouseY = 0;          // -1..1 from stage center
+  let stageRect = stage.getBoundingClientRect();
+  function measure(){
+    stageRect = stage.getBoundingClientRect();
+    const base = Math.min(stageRect.width * 0.16, 200);
+    floats.forEach(f=>{
+      const scale = parseFloat(f.dataset.scale)||1;
+      f.style.width = (base*scale) + 'px';
+      f.style.left = f.dataset.x + '%';
+      f.style.top  = f.dataset.y + '%';
+      f.style.zIndex = Math.round((parseFloat(f.dataset.depth)||1)*10);
+    });
+  }
+  // per-float runtime state
+  const st = floats.map((f,i)=>({
+    el:f, depth:parseFloat(f.dataset.depth)||1,
+    phase: Math.random()*Math.PI*2, spd:0.6+Math.random()*0.5, amp:7+Math.random()*7,
+    rphase: Math.random()*Math.PI*2, rspd:0.4+Math.random()*0.4, ramp:3+Math.random()*4,
+    dragX:0, dragY:0, tgtX:0, tgtY:0, dragging:false, k:0.08
+  }));
+
+  // pointer parallax (desktop)
+  window.addEventListener('pointermove', e=>{
+    if(e.pointerType==='mouse'){
+      mouseX = ((e.clientX - stageRect.left)/stageRect.width - .5)*2;
+      mouseY = ((e.clientY - stageRect.top)/stageRect.height - .5)*2;
+    }
+  }, {passive:true});
+
+  // drag-and-toss
+  st.forEach(s=>{
+    let id=null, sx=0, sy=0, ox=0, oy=0;
+    s.el.addEventListener('pointerdown', e=>{
+      id=e.pointerId; s.dragging=true; s.k=0.3; s.el.setPointerCapture(id);
+      sx=e.clientX; sy=e.clientY; ox=s.dragX; oy=s.dragY; s.el.style.cursor='grabbing';
+    });
+    s.el.addEventListener('pointermove', e=>{
+      if(!s.dragging||e.pointerId!==id) return;
+      s.tgtX = ox + (e.clientX - sx);
+      s.tgtY = oy + (e.clientY - sy);
+    });
+    const end=e=>{ if(e.pointerId!==id) return; s.dragging=false; s.k=0.05; s.tgtX=0; s.tgtY=0; s.el.style.cursor='grab'; };
+    s.el.addEventListener('pointerup', end);
+    s.el.addEventListener('pointercancel', end);
+  });
+
+  window.addEventListener('resize', measure);
+  let t0 = performance.now();
+  function frame(now){
+    const t = (now - t0)/1000;
+    const scrollAmt = window.scrollY || 0;
+    for(const s of st){
+      // ease drag toward target
+      s.dragX += (s.tgtX - s.dragX)*s.k;
+      s.dragY += (s.tgtY - s.dragY)*s.k;
+      const bobY = reduce?0:Math.sin(t*s.spd + s.phase)*s.amp;
+      const rot  = reduce?0:Math.sin(t*s.rspd + s.rphase)*s.ramp;
+      const parX = reduce?0:(-mouseX * s.depth * 22);
+      const parY = reduce?0:(-mouseY * s.depth * 16);
+      const scr  = Math.min(scrollAmt,800) * s.depth * 0.12; // drift down on scroll
+      const tx = parX + s.dragX;
+      const ty = bobY + parY + s.dragY + scr;
+      s.el.style.transform = `translate(-50%,-50%) translate3d(${tx.toFixed(2)}px,${ty.toFixed(2)}px,0) rotate(${rot.toFixed(2)}deg)`;
+    }
+    requestAnimationFrame(frame);
+  }
+  measure();
+  // re-measure after images load (sizes/layout)
+  window.addEventListener('load', measure);
+  requestAnimationFrame(frame);
+})();
+
+document.getElementById('yr').textContent = new Date().getFullYear();
+renderShop(); updateCart();
+</script>
+</body>
+</html>

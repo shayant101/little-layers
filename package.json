@@ -1,0 +1,9 @@
+{
+  "name": "little-layers",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Little Layers — colorful 3D-printed things for kids. Custom store with Stripe checkout.",
+  "dependencies": {
+    "stripe": "^16.0.0"
+  }
+}
