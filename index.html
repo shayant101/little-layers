@@ -162,6 +162,19 @@
   .foot-cart .note{font-size:12.5px;color:var(--muted);margin:8px 0 16px}
   .checkout{width:100%;justify-content:center;font-size:15.5px;padding:15px}
   .pay-msg{font-size:13px;text-align:center;margin-top:12px;color:var(--rose-deep);font-weight:600;display:none}
+  /* Order confirmation toast (shown after returning from Stripe) */
+  .toast{position:fixed;left:50%;top:18px;transform:translate(-50%,-140%);z-index:120;max-width:560px;width:calc(100% - 32px);
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:16px 18px;display:flex;gap:13px;align-items:flex-start;opacity:0;pointer-events:none;
+    transition:transform .45s cubic-bezier(.2,.9,.3,1.2),opacity .35s}
+  .toast.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+  .toast .badge{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center}
+  .toast .badge .icn{width:20px;height:20px;stroke:#fff;stroke-width:2.4}
+  .toast.ok .badge{background:var(--sky)} .toast.info .badge{background:var(--gold)}
+  .toast h4{font-family:'Poppins';font-weight:500;font-size:16px;color:var(--ink);margin-bottom:2px}
+  .toast p{font-size:13px;color:var(--muted);line-height:1.45}
+  .toast .x{flex:none;background:none;border:none;cursor:pointer;color:var(--muted);padding:2px;margin:-2px -4px 0 0}
+  .toast .x .icn{width:18px;height:18px;stroke:var(--muted)}
 
   @media(max-width:880px){
     .features .wrap{grid-template-columns:1fr 1fr;gap:22px}
@@ -177,6 +190,16 @@
 <body>
 
 <div class="announce">Handmade &amp; made to order in Irvine, CA &nbsp;·&nbsp; <b>Free local pickup</b></div>
+
+<!-- Order confirmation / cancel toast (populated by handleReturnFromCheckout) -->
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <div class="badge"><svg class="icn" viewBox="0 0 24 24" fill="none"><path id="toastIcon" d="M20 6 9 17l-5-5"/></svg></div>
+  <div style="flex:1">
+    <h4 id="toastTitle">Thank you!</h4>
+    <p id="toastBody">Your order is in.</p>
+  </div>
+  <button class="x" onclick="hideToast()" aria-label="Dismiss"><svg class="icn" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+</div>
 
 <header>
   <div class="wrap nav">
@@ -321,8 +344,17 @@ const PRODUCTS = [
     img:'photos/lilaccaddy.jpg', accent:'#B49BDD', tag:'', personalize:true },
 ];
 
-let cart = [];
+const CART_KEY = 'littlelayers.cart';
+let cart = loadCart();
 function money(n){ return '$' + n.toFixed(2); }
+
+function loadCart(){
+  try{ const v = JSON.parse(localStorage.getItem(CART_KEY)); return Array.isArray(v) ? v : []; }
+  catch(e){ return []; }
+}
+function saveCart(){
+  try{ localStorage.setItem(CART_KEY, JSON.stringify(cart)); }catch(e){}
+}
 
 function renderShop(){
   document.getElementById('grid').innerHTML = PRODUCTS.map(p => `
@@ -365,6 +397,7 @@ function changeQty(i,d){ cart[i].qty+=d; if(cart[i].qty<=0) cart.splice(i,1); up
 function removeItem(i){ cart.splice(i,1); updateCart(); }
 
 function updateCart(){
+  saveCart();
   const count = cart.reduce((s,c)=>s+c.qty,0);
   const total = cart.reduce((s,c)=>s+c.qty*c.price,0);
   const cc = document.getElementById('cartCount');
@@ -498,8 +531,44 @@ async function checkout(){
   requestAnimationFrame(frame);
 })();
 
+/* =========================================================
+   POST-CHECKOUT — show a confirmation after returning from Stripe.
+   Stripe sends the customer back to /?paid=1 (success) or
+   /?canceled=1 (they backed out). See api/create-checkout-session.js.
+   ========================================================= */
+function showToast(kind, title, body){
+  const t = document.getElementById('toast');
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastBody').textContent = body;
+  // check-mark for success, info "!" for canceled
+  document.getElementById('toastIcon').setAttribute('d',
+    kind==='ok' ? 'M20 6 9 17l-5-5' : 'M12 8v5 M12 16.5v.5');
+  t.classList.remove('ok','info'); t.classList.add(kind==='ok'?'ok':'info','show');
+  if(kind==='ok') setTimeout(hideToast, 9000);
+}
+function hideToast(){ document.getElementById('toast').classList.remove('show'); }
+
+function handleReturnFromCheckout(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('paid')==='1'){
+    cart = []; updateCart();                 // order placed — empty the bag
+    showToast('ok', 'Thank you for your order! 💜',
+      'Your payment went through and a receipt is on its way by email. Made-to-order items ship in 3–7 business days.');
+  } else if(params.get('canceled')==='1'){
+    showToast('info', 'Checkout canceled',
+      'No worries — your bag is saved. Whenever you’re ready, tap the cart to pick up where you left off.');
+  } else {
+    return;
+  }
+  // tidy the URL so a refresh doesn't re-trigger the message
+  if(window.history && history.replaceState){
+    history.replaceState({}, '', window.location.pathname + window.location.hash);
+  }
+}
+
 document.getElementById('yr').textContent = new Date().getFullYear();
 renderShop(); updateCart();
+handleReturnFromCheckout();
 </script>
 </body>
 </html>

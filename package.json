@@ -5,5 +5,8 @@
   "description": "Little Layers — colorful 3D-printed things for kids. Custom store with Stripe checkout.",
   "dependencies": {
     "stripe": "^16.0.0"
+  },
+  "engines": {
+    "node": ">=18.x"
   }
 }
