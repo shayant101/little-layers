@@ -72,6 +72,9 @@ Square photos (e.g. 800×800) look best.
 ---
 
 ## Notes & ideas for later
+- After paying, customers come back to the site and see a "Thank you for your order"
+  confirmation; the bag empties automatically. If they cancel, their bag is saved
+  (it's remembered in the browser) and a gentle "checkout canceled" note appears.
 - Shipping is set to a flat $5 example inside `api/create-checkout-session.js` — edit it.
 - Stripe emails you on every sale; you can also see orders in the Stripe Dashboard.
 - For extra safety you can switch to fixed Stripe **Price IDs** instead of sending
