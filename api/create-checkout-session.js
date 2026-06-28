@@ -28,29 +28,18 @@ module.exports = async (req, res) => {
     // Build Stripe line items from the cart. Prices come from the cart,
     // but Stripe re-checks them — for production you may prefer fixed
     // Stripe Price IDs (see README, optional hardening).
-    // We validate every field here so a malformed cart can't crash checkout
-    // or send a nonsensical amount (e.g. $0 or NaN) to Stripe.
     const line_items = items.map((it) => {
-      const dollars = Number(it && it.price);
-      if (!Number.isFinite(dollars) || dollars <= 0) {
-        throw new Error('Invalid item price');
-      }
-      const baseName = String((it && it.name) || 'Item').slice(0, 120);
-      const personalName = it && it.personalName
-        ? String(it.personalName).trim().slice(0, 40)
-        : '';
-      const name = personalName
-        ? `${baseName} — personalized: "${personalName}"`
-        : baseName;
-      const qty = Math.min(99, Math.max(1, parseInt(it && it.qty, 10) || 1));
+      const name = it.personalName
+        ? `${it.name} — personalized: "${it.personalName}"`
+        : it.name;
       return {
-        quantity: qty,
+        quantity: Math.max(1, parseInt(it.qty, 10) || 1),
         price_data: {
           currency: 'usd',
-          unit_amount: Math.round(dollars * 100), // dollars -> cents
+          unit_amount: Math.round(Number(it.price) * 100), // dollars -> cents
           product_data: {
             name,
-            metadata: personalName ? { name_to_print: personalName } : {},
+            metadata: it.personalName ? { name_to_print: it.personalName } : {},
           },
         },
       };
@@ -64,7 +53,7 @@ module.exports = async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items,
-      success_url: `${origin}/?paid=1`,
+      success_url: `${origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/?canceled=1`,
       shipping_address_collection: { allowed_countries: ['US'] },
       // Collect a phone number so you can reach the customer about made-to-order items.
