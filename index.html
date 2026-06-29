@@ -64,7 +64,7 @@
       linear-gradient(180deg,#FFF6FA,#FBFAF6);
     overflow:hidden;touch-action:pan-y}
   .float{position:absolute;top:0;left:0;will-change:transform;cursor:grab;touch-action:none;user-select:none;-webkit-user-drag:none;
-    filter:drop-shadow(0 24px 30px rgba(80,40,70,.22));transition:filter .2s}
+    filter:drop-shadow(0 14px 18px rgba(80,40,70,.20));transition:filter .2s}
   .float:active{cursor:grabbing}
   .float img{width:100%;height:auto;display:block;pointer-events:none;-webkit-user-drag:none}
   .hero-content{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;
@@ -119,6 +119,10 @@
   .opt select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;font-family:'Inter';font-size:14px;background:#fff;color:var(--ink);cursor:pointer;appearance:none;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237A7280' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
   .opt select:focus{outline:none;border-color:var(--rose)}
+  .swatches{display:flex;gap:8px;flex-wrap:wrap}
+  .sw-btn{width:28px;height:28px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0;transition:transform .12s,box-shadow .12s}
+  .sw-btn:hover{transform:scale(1.12)}
+  .sw-btn.active{box-shadow:0 0 0 2px var(--ink)}
   .card .add{margin-top:16px;width:100%;justify-content:center}
 
   .about{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
@@ -309,6 +313,8 @@ const CADDY_COLORS = ['Yellow','Purple','Green','Orange','Blue','Pink'];
 const HANDLE_COLORS = ['Yellow','Blue','Pink','Purple','Green','Orange'];
 const DISH_COLORS = ['Yellow','Purple','Green','Orange','Blue','Pink'];
 const FLOWER_STYLES = ['Blue holder + pink flower','Blue holder + yellow flower','Blue holder + yellow & pink flower'];
+// Representative shades for the color options (shown as swatches)
+const SWATCHES = { Yellow:'#FAD24A', Purple:'#A77BD8', Green:'#7FC889', Orange:'#F4813C', Blue:'#5EB7DA', Pink:'#F08CB0' };
 
 const PRODUCTS = [
   { id:'orangecaddy', name:'Orange Caddy', cat:'Caddy', img:'photos/caddy.jpg', tag:'Bestseller',
@@ -344,10 +350,21 @@ function money(n){ return '$' + n.toFixed(2); }
 function renderShop(){
   document.getElementById('grid').innerHTML = PRODUCTS.map(p => {
     const base = p.sets ? p.sets[0].price : p.price;
-    const selectsHtml = (p.selects||[]).map(s => `
+    const selectsHtml = (p.selects||[]).map(s => {
+      const isColor = s.choices.every(c => SWATCHES[c]);
+      if(isColor){
+        return `
+          <div class="opt"><span>${s.label}</span>
+            <div class="swatches" id="opt-${p.id}-${s.key}" data-value="${s.choices[0]}">
+              ${s.choices.map((c,i)=>`<button type="button" class="sw-btn${i===0?' active':''}" title="${c}" aria-label="${c}" style="background:${SWATCHES[c]}" onclick="pickSwatch('${p.id}','${s.key}','${c}',this)"></button>`).join('')}
+            </div>
+          </div>`;
+      }
+      return `
           <label class="opt"><span>${s.label}</span>
             <select id="opt-${p.id}-${s.key}">${s.choices.map(c=>`<option>${c}</option>`).join('')}</select>
-          </label>`).join('');
+          </label>`;
+    }).join('');
     const setsHtml = p.sets ? `
           <label class="opt"><span>Set size</span>
             <select id="set-${p.id}" onchange="recalc('${p.id}')">${p.sets.map((s,i)=>`<option value="${i}">${s.label} — ${money(s.price)}</option>`).join('')}</select>
@@ -375,6 +392,13 @@ function renderShop(){
     </div>`; }).join('');
 }
 
+function pickSwatch(id, key, val, btn){
+  const g = document.getElementById('opt-'+id+'-'+key);
+  g.dataset.value = val;
+  g.querySelectorAll('.sw-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
 function recalc(id){
   const p = PRODUCTS.find(x=>x.id===id);
   let price = p.sets ? p.sets[+document.getElementById('set-'+id).value].price : p.price;
@@ -389,7 +413,9 @@ function addToCart(id){
   const p = PRODUCTS.find(x=>x.id===id);
   const opts = (p.selects||[]).map(s=>{
     const el = document.getElementById('opt-'+id+'-'+s.key);
-    return el ? `${s.label}: ${el.value}` : null;
+    if(!el) return null;
+    const val = el.tagName==='SELECT' ? el.value : el.dataset.value;
+    return `${s.label}: ${val}`;
   }).filter(Boolean);
   let price = p.price, setLabel = '';
   if(p.sets){ const si = +document.getElementById('set-'+id).value; price = p.sets[si].price; setLabel = p.sets[si].label; }
@@ -522,7 +548,9 @@ async function checkout(){
 
   window.addEventListener('resize', measure);
   let t0 = performance.now();
+  let running = true;
   function frame(now){
+    if(!running) return;
     const t = (now - t0)/1000;
     const scrollAmt = window.scrollY || 0;
     for(const s of st){
@@ -543,6 +571,13 @@ async function checkout(){
   measure();
   // re-measure after images load (sizes/layout)
   window.addEventListener('load', measure);
+  // Pause the animation loop whenever the hero is scrolled off-screen (big perf win)
+  const io = new IntersectionObserver(es => {
+    const vis = es[0].isIntersecting;
+    if(vis && !running){ running = true; t0 = performance.now(); requestAnimationFrame(frame); }
+    else if(!vis){ running = false; }
+  }, { threshold: 0 });
+  io.observe(stage);
   requestAnimationFrame(frame);
 })();
 
