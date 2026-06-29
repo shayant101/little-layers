@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Orders — Little Layers</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" type="image/png" href="photos/logo_icon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{--paper:#FFFCF8;--ink:#2B2530;--muted:#7A7280;--rose:#E8688F;--rose-deep:#D2497A;--sky:#79C2D2;--gold:#EAC15D;--line:#F0E7EE;--card:#FFFFFF;--radius:16px;--shadow:0 10px 28px rgba(80,40,70,.10)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--paper);line-height:1.5;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,.name{font-family:'Poppins';letter-spacing:-.01em}
+  a{color:var(--rose-deep)}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 20px 60px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:22px}
+  .logo{display:flex;align-items:center;gap:10px}
+  .logo img{height:34px}
+  .logo .name{font-weight:600;font-size:18px}
+  .btn{border:none;cursor:pointer;font-family:'Inter';font-weight:600;font-size:14px;padding:10px 18px;border-radius:999px;background:var(--ink);color:#fff;transition:.15s}
+  .btn:hover{background:#3d3543}
+  .btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn.ghost:hover{border-color:var(--ink)}
+
+  /* login */
+  .gate{max-width:380px;margin:60px auto;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:30px;text-align:center}
+  .gate img{height:46px;margin-bottom:10px}
+  .gate h2{font-size:20px;margin-bottom:4px}
+  .gate p{color:var(--muted);font-size:14px;margin-bottom:18px}
+  .gate input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:12px;font-size:15px;font-family:'Inter';margin-bottom:12px}
+  .gate input:focus{outline:none;border-color:var(--rose)}
+  .gate .btn{width:100%;justify-content:center}
+  .err{color:var(--rose-deep);font-size:13px;font-weight:600;margin-top:10px;min-height:1px}
+
+  .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px;flex-wrap:wrap}
+  .toolbar h1{font-size:22px}
+  .count{color:var(--muted);font-size:14px}
+  .order{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:14px}
+  .order .top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  .order .when{font-size:13px;color:var(--muted)}
+  .order .total{font-family:'Poppins';font-weight:700;font-size:20px}
+  .pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:#e9f7f1;color:#1f8f6b;margin-left:8px}
+  .pill.ship{background:#FFF0F5;color:var(--rose-deep)}
+  .items{margin:12px 0;padding:12px 0;border-top:1px dashed var(--line);border-bottom:1px dashed var(--line)}
+  .items .it{display:flex;justify-content:space-between;gap:12px;font-size:14.5px;padding:3px 0}
+  .items .it b{font-weight:600}
+  .meta{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;font-size:13.5px;margin-top:12px}
+  .meta .k{color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:11px}
+  .meta a{word-break:break-all}
+  .empty{text-align:center;color:var(--muted);padding:50px}
+  @media(max-width:640px){.meta{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Login gate -->
+    <div class="gate" id="gate">
+      <img src="photos/logo_icon.png" alt="Little Layers" />
+      <h2>Little Layers — Orders</h2>
+      <p>Enter the team password to view orders.</p>
+      <input id="pw" type="password" placeholder="Team password" autocomplete="current-password" />
+      <button class="btn" onclick="login()">View orders</button>
+      <div class="err" id="err"></div>
+    </div>
+
+    <!-- Orders view (hidden until logged in) -->
+    <div id="app" style="display:none">
+      <header>
+        <a href="/" class="logo"><img src="photos/logo_icon.png" alt="Little Layers" /><span class="name">little layers</span></a>
+        <div style="display:flex;gap:8px">
+          <button class="btn ghost" onclick="loadOrders()">↻ Refresh</button>
+          <button class="btn ghost" onclick="logout()">Lock</button>
+        </div>
+      </header>
+      <div class="toolbar">
+        <h1>Recent orders</h1>
+        <span class="count" id="count"></span>
+      </div>
+      <div id="list"></div>
+    </div>
+  </div>
+
+<script>
+const PW_KEY = 'll_orders_pw';
+function money(cents, cur){ return (cur||'USD') + ' ' + (cents/100).toFixed(2); }
+function when(ts){ return new Date(ts*1000).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function addr(a){
+  if(!a) return '';
+  return [a.line1,a.line2,[a.city,a.state,a.postal_code].filter(Boolean).join(', '),a.country].filter(Boolean).join(', ');
+}
+
+async function loadOrders(){
+  const pw = localStorage.getItem(PW_KEY) || '';
+  const list = document.getElementById('list');
+  list.innerHTML = '<div class="empty">Loading…</div>';
+  try{
+    const res = await fetch('/api/orders', { headers: { 'x-orders-pw': pw } });
+    if(res.status===401){ logout('Wrong password — try again.'); return; }
+    if(!res.ok){ const d=await res.json().catch(()=>({})); list.innerHTML = '<div class="empty">'+esc(d.error||'Could not load orders.')+'</div>'; return; }
+    const data = await res.json();
+    const orders = data.orders||[];
+    document.getElementById('count').textContent = orders.length + ' order' + (orders.length===1?'':'s');
+    if(!orders.length){ list.innerHTML = '<div class="empty">No orders yet.</div>'; return; }
+    list.innerHTML = orders.map(o=>{
+      const isPickup = /pickup/i.test(o.shipMethod||'');
+      const items = (o.items||[]).map(it=>`<div class="it"><span><b>${it.qty}×</b> ${esc(it.desc)}</span><span>${money(it.amount,o.currency)}</span></div>`).join('');
+      const shipLine = isPickup ? '' : `<div><div class="k">Ship to</div>${esc(o.shipName)}<br>${esc(addr(o.address))}</div>`;
+      return `<div class="order">
+        <div class="top">
+          <div><div class="when">${when(o.created)}</div><div style="font-weight:600">${esc(o.customerName||o.email||'Customer')}</div></div>
+          <div style="text-align:right"><div class="total">${money(o.amount,o.currency)}</div>
+            <span class="pill ${isPickup?'':'ship'}">${isPickup?'Local pickup':'Ship'}</span></div>
+        </div>
+        <div class="items">${items}</div>
+        <div class="meta">
+          <div><div class="k">Email</div><a href="mailto:${esc(o.email)}">${esc(o.email)||'—'}</a></div>
+          <div><div class="k">Phone</div>${esc(o.phone)||'—'}</div>
+          <div><div class="k">Method</div>${esc(o.shipMethod)||'—'}</div>
+          ${shipLine}
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){ list.innerHTML = '<div class="empty">Could not reach the server.</div>'; }
+}
+
+function login(){
+  const v = document.getElementById('pw').value.trim();
+  if(!v){ document.getElementById('err').textContent='Enter the password.'; return; }
+  localStorage.setItem(PW_KEY, v);
+  showApp();
+}
+function showApp(){
+  document.getElementById('gate').style.display='none';
+  document.getElementById('app').style.display='block';
+  loadOrders();
+}
+function logout(msg){
+  localStorage.removeItem(PW_KEY);
+  document.getElementById('app').style.display='none';
+  document.getElementById('gate').style.display='block';
+  document.getElementById('err').textContent = msg||'';
+  document.getElementById('pw').value='';
+}
+// auto-enter if password remembered
+if(localStorage.getItem(PW_KEY)) showApp();
+document.getElementById('pw').addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
+</script>
+</body>
+</html>
