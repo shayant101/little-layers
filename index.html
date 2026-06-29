@@ -171,6 +171,12 @@
   .foot-cart .note{font-size:12.5px;color:var(--muted);margin:8px 0 16px}
   .checkout{width:100%;justify-content:center;font-size:15.5px;padding:15px}
   .pay-msg{font-size:13px;text-align:center;margin-top:12px;color:var(--rose-deep);font-weight:600;display:none}
+  .promo{display:flex;gap:8px;margin-bottom:6px}
+  .promo input{flex:1;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font-family:'Inter';font-size:14px}
+  .promo input:focus{outline:none;border-color:var(--rose)}
+  .promo button{border:1.5px solid var(--ink);background:#fff;color:var(--ink);border-radius:10px;padding:0 16px;font-family:'Inter';font-weight:600;font-size:14px;cursor:pointer;transition:.15s}
+  .promo button:hover{background:var(--ink);color:#fff}
+  .promo-msg{font-size:12.5px;font-weight:600;margin:0 0 10px}
 
   @media(max-width:880px){
     .features .wrap{grid-template-columns:1fr 1fr;gap:22px}
@@ -292,8 +298,13 @@
   </div>
   <div class="items" id="cartItems"></div>
   <div class="foot-cart">
+    <div class="promo">
+      <input id="promoInput" type="text" placeholder="Promo code" aria-label="Promo code" />
+      <button type="button" onclick="applyPromo()">Apply</button>
+    </div>
+    <p class="promo-msg" id="promoMsg"></p>
     <div class="totrow"><span>Total</span><span id="cartTotal">$0.00</span></div>
-    <p class="note">Shipping &amp; taxes calculated at checkout. Personalized items are made to order.</p>
+    <p class="note">Choose <b>standard shipping</b> or <b>free local pickup</b> (Irvine, CA) at checkout. Personalized items are made to order.</p>
     <button class="btn btn-primary checkout" onclick="checkout()" id="checkoutBtn">
       <svg class="icn" viewBox="0 0 24 24" style="stroke:#fff"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       Checkout
@@ -344,7 +355,11 @@ const PRODUCTS = [
     sets:[{label:'Set of 2',price:28},{label:'Set of 3',price:32}] },
 ];
 
-let cart = [];
+const CART_KEY = 'littlelayers.cart';
+function loadCart(){ try{ const v = JSON.parse(localStorage.getItem(CART_KEY)); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
+function saveCart(){ try{ localStorage.setItem(CART_KEY, JSON.stringify(cart)); }catch(e){} }
+let cart = loadCart();
+let promoCode = '';
 function money(n){ return '$' + n.toFixed(2); }
 
 function renderShop(){
@@ -439,6 +454,7 @@ function changeQty(i,d){ cart[i].qty+=d; if(cart[i].qty<=0) cart.splice(i,1); up
 function removeItem(i){ cart.splice(i,1); updateCart(); }
 
 function updateCart(){
+  saveCart();
   const count = cart.reduce((s,c)=>s+c.qty,0);
   const total = cart.reduce((s,c)=>s+c.qty*c.price,0);
   const cc = document.getElementById('cartCount');
@@ -471,6 +487,18 @@ function updateCart(){
 function openCart(){ document.getElementById('drawer').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
 function closeCart(){ document.getElementById('drawer').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
 
+function applyPromo(){
+  const v = (document.getElementById('promoInput').value || '').trim();
+  const msg = document.getElementById('promoMsg');
+  if(v.toLowerCase() === 'freeshipplz'){
+    promoCode = v; msg.textContent = '✓ Free shipping applied at checkout'; msg.style.color = '#2e9e7a';
+  } else if(!v){
+    promoCode = ''; msg.textContent = '';
+  } else {
+    promoCode = ''; msg.textContent = "That code isn't valid."; msg.style.color = 'var(--rose-deep)';
+  }
+}
+
 async function checkout(){
   if(!cart.length) return;
   const msg = document.getElementById('payMsg');
@@ -479,7 +507,7 @@ async function checkout(){
   try{
     const res = await fetch('/api/create-checkout-session', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ items: cart })
+      body: JSON.stringify({ items: cart, promo: promoCode })
     });
     if(!res.ok) throw new Error('not-connected');
     const data = await res.json();
@@ -583,6 +611,11 @@ async function checkout(){
 
 document.getElementById('yr').textContent = new Date().getFullYear();
 renderShop(); updateCart();
+// Returning from a canceled checkout — bag is preserved, so reopen it.
+if(new URLSearchParams(location.search).get('canceled') === '1'){
+  if(window.history && history.replaceState) history.replaceState({}, '', location.pathname);
+  openCart();
+}
 </script>
 </body>
 </html>
