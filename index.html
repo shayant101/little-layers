@@ -114,6 +114,11 @@
   .perso label .icn{width:14px;height:14px;stroke:var(--rose-deep)}
   .perso input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font-family:'Inter';font-size:14px;background:#fff;transition:border .15s}
   .perso input:focus{outline:none;border-color:var(--rose)}
+  .opt{display:block;margin-top:11px}
+  .opt span{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.07em}
+  .opt select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;font-family:'Inter';font-size:14px;background:#fff;color:var(--ink);cursor:pointer;appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237A7280' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+  .opt select:focus{outline:none;border-color:var(--rose)}
   .card .add{margin-top:16px;width:100%;justify-content:center}
 
   .about{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
@@ -162,19 +167,6 @@
   .foot-cart .note{font-size:12.5px;color:var(--muted);margin:8px 0 16px}
   .checkout{width:100%;justify-content:center;font-size:15.5px;padding:15px}
   .pay-msg{font-size:13px;text-align:center;margin-top:12px;color:var(--rose-deep);font-weight:600;display:none}
-  /* Order confirmation toast (shown after returning from Stripe) */
-  .toast{position:fixed;left:50%;top:18px;transform:translate(-50%,-140%);z-index:120;max-width:560px;width:calc(100% - 32px);
-    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
-    padding:16px 18px;display:flex;gap:13px;align-items:flex-start;opacity:0;pointer-events:none;
-    transition:transform .45s cubic-bezier(.2,.9,.3,1.2),opacity .35s}
-  .toast.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}
-  .toast .badge{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center}
-  .toast .badge .icn{width:20px;height:20px;stroke:#fff;stroke-width:2.4}
-  .toast.ok .badge{background:var(--sky)} .toast.info .badge{background:var(--gold)}
-  .toast h4{font-family:'Poppins';font-weight:500;font-size:16px;color:var(--ink);margin-bottom:2px}
-  .toast p{font-size:13px;color:var(--muted);line-height:1.45}
-  .toast .x{flex:none;background:none;border:none;cursor:pointer;color:var(--muted);padding:2px;margin:-2px -4px 0 0}
-  .toast .x .icn{width:18px;height:18px;stroke:var(--muted)}
 
   @media(max-width:880px){
     .features .wrap{grid-template-columns:1fr 1fr;gap:22px}
@@ -190,16 +182,6 @@
 <body>
 
 <div class="announce">Handmade &amp; made to order in Irvine, CA &nbsp;·&nbsp; <b>Free local pickup</b></div>
-
-<!-- Order confirmation / cancel toast (populated by handleReturnFromCheckout) -->
-<div class="toast" id="toast" role="status" aria-live="polite">
-  <div class="badge"><svg class="icn" viewBox="0 0 24 24" fill="none"><path id="toastIcon" d="M20 6 9 17l-5-5"/></svg></div>
-  <div style="flex:1">
-    <h4 id="toastTitle">Thank you!</h4>
-    <p id="toastBody">Your order is in.</p>
-  </div>
-  <button class="x" onclick="hideToast()" aria-label="Dismiss"><svg class="icn" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
-</div>
 
 <header>
   <div class="wrap nav">
@@ -323,41 +305,60 @@
    - personalize: true adds a "Name to print" field
    - img: product photo (in /photos)
    ========================================================= */
+const CADDY_COLORS = ['Yellow','Purple','Green','Orange','Blue','Pink'];
+const HANDLE_COLORS = ['Yellow','Blue','Pink','Purple','Green','Orange'];
+const DISH_COLORS = ['Yellow','Purple','Green','Orange','Blue','Pink'];
+const FLOWER_STYLES = ['Blue holder + pink flower','Blue holder + yellow flower','Blue holder + yellow & pink flower'];
+
 const PRODUCTS = [
-  { id:'bloomstack', name:'BloomStack Organizer', price:24, cat:'Desk organizer',
-    desc:'A flower-shaped, stackable organizer for pens, markers and small treasures.',
-    img:'photos/bloomstack.jpg', accent:'#E8688F', tag:'Bestseller', personalize:false },
-  { id:'caddy', name:'Personalized Caddy', price:22, cat:'Art supplies',
-    desc:'A sturdy caddy with compartments for crayons & markers, printed with a name.',
-    img:'photos/caddy.jpg', accent:'#F3A07C', tag:'Personalized', personalize:true },
-  { id:'doodledish', name:'The Doodle Dish', price:18, cat:'Catch-all tray',
-    desc:'A wavy tray for doodling supplies, beads and tiny bits. Keeps the desk tidy.',
-    img:'photos/doodledish.jpg', accent:'#B49BDD', tag:'New', personalize:false },
-  { id:'carrycaddy', name:'Carry Caddy', price:26, cat:'Grab & go',
-    desc:'A caddy with a handle and compartments — perfect for art on the move.',
-    img:'photos/carrycaddy.jpg', accent:'#F3A07C', tag:'', personalize:true },
-  { id:'purplecaddy', name:'Ribbed Caddy', price:26, cat:'Grab & go',
-    desc:'A ridged, oval caddy with a sturdy handle — roomy enough for the whole kit.',
-    img:'photos/purplecaddy.jpg', accent:'#B49BDD', tag:'', personalize:false },
-  { id:'lilaccaddy', name:'Lilac Caddy', price:24, cat:'Art supplies',
-    desc:'A soft-lilac caddy with divided sections — cute pens not included (but welcome).',
-    img:'photos/lilaccaddy.jpg', accent:'#B49BDD', tag:'', personalize:true },
+  { id:'orangecaddy', name:'Orange Caddy', cat:'Caddy', img:'photos/caddy.jpg', tag:'Bestseller',
+    desc:'A round caddy with a sturdy handle and divided sections — perfect for crayons, markers and supplies. Mix your colors, and add a name printed in white.',
+    price:25, namePrice:32, personalize:true,
+    selects:[{key:'caddy',label:'Caddy color',choices:CADDY_COLORS},{key:'handle',label:'Handle color',choices:HANDLE_COLORS}] },
+
+  { id:'purplecaddy', name:'Purple Caddy', cat:'Caddy', img:'photos/purplecaddy.jpg', tag:'',
+    desc:'A ribbed, oval caddy with a sturdy handle — roomy enough for the whole kit. Choose your caddy and handle colors.',
+    price:28, personalize:false,
+    selects:[{key:'caddy',label:'Caddy color',choices:CADDY_COLORS},{key:'handle',label:'Handle color',choices:HANDLE_COLORS}] },
+
+  { id:'doodlesmall', name:'Doodle Dish — Small', cat:'Tray (set of 2)', img:'photos/doodledish.jpg', tag:'',
+    desc:'A set of two wavy trays with a net design — great for beads, clips and tiny treasures. Pick two colors, used across the inner net and outer layer.',
+    price:18, personalize:false,
+    selects:[{key:'color1',label:'Color 1',choices:DISH_COLORS},{key:'color2',label:'Color 2',choices:DISH_COLORS}] },
+
+  { id:'doodlelarge', name:'Doodle Dish — Large', cat:'Catch-all tray', img:'photos/doodledish.jpg', tag:'',
+    desc:'A larger wavy catch-all tray for doodling supplies and odds and ends. Add a name to make it theirs.',
+    price:13, namePrice:18, personalize:true,
+    selects:[{key:'color',label:'Color',choices:DISH_COLORS}] },
+
+  { id:'flowerholder', name:'Flower Pencil Holder', cat:'Organizer', img:'photos/bloomstack.jpg', tag:'New',
+    desc:'A blue flower-shaped pencil holder, sold as a set. Choose your flower style and set size.',
+    personalize:false,
+    selects:[{key:'style',label:'Flower style',choices:FLOWER_STYLES}],
+    sets:[{label:'Set of 2',price:28},{label:'Set of 3',price:32}] },
 ];
 
-const CART_KEY = 'littlelayers.cart';
-let cart = loadCart();
+let cart = [];
 function money(n){ return '$' + n.toFixed(2); }
 
-function loadCart(){
-  try{ const v = JSON.parse(localStorage.getItem(CART_KEY)); return Array.isArray(v) ? v : []; }
-  catch(e){ return []; }
-}
-function saveCart(){
-  try{ localStorage.setItem(CART_KEY, JSON.stringify(cart)); }catch(e){}
-}
-
 function renderShop(){
-  document.getElementById('grid').innerHTML = PRODUCTS.map(p => `
+  document.getElementById('grid').innerHTML = PRODUCTS.map(p => {
+    const base = p.sets ? p.sets[0].price : p.price;
+    const selectsHtml = (p.selects||[]).map(s => `
+          <label class="opt"><span>${s.label}</span>
+            <select id="opt-${p.id}-${s.key}">${s.choices.map(c=>`<option>${c}</option>`).join('')}</select>
+          </label>`).join('');
+    const setsHtml = p.sets ? `
+          <label class="opt"><span>Set size</span>
+            <select id="set-${p.id}" onchange="recalc('${p.id}')">${p.sets.map((s,i)=>`<option value="${i}">${s.label} — ${money(s.price)}</option>`).join('')}</select>
+          </label>` : '';
+    const surcharge = (p.personalize && p.namePrice) ? ` (+${money(p.namePrice-p.price)})` : '';
+    const persoHtml = p.personalize ? `
+          <div class="perso">
+            <label for="pn-${p.id}"><svg class="icn" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Name to print${surcharge}</label>
+            <input id="pn-${p.id}" type="text" maxlength="14" placeholder="Optional — e.g. Irha" oninput="recalc('${p.id}')" />
+          </div>` : '';
+    return `
     <div class="card">
       <div class="panel">
         ${p.tag ? `<span class="tag">${p.tag}</span>` : ''}
@@ -367,37 +368,51 @@ function renderShop(){
         <span class="cat">${p.cat}</span>
         <h3>${p.name}</h3>
         <p class="desc">${p.desc}</p>
-        <div class="priced"><span class="price">${money(p.price)}</span><small>+ shipping</small></div>
-        ${p.personalize ? `
-          <div class="perso">
-            <label for="pn-${p.id}"><svg class="icn" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Name to print</label>
-            <input id="pn-${p.id}" type="text" maxlength="14" placeholder="e.g. Irha" />
-          </div>` : ''}
+        ${selectsHtml}${setsHtml}${persoHtml}
+        <div class="priced"><span class="price" id="price-${p.id}">${money(base)}</span><small>+ shipping</small></div>
         <button class="btn btn-primary add" onclick="addToCart('${p.id}')">Add to bag</button>
       </div>
-    </div>`).join('');
+    </div>`; }).join('');
+}
+
+function recalc(id){
+  const p = PRODUCTS.find(x=>x.id===id);
+  let price = p.sets ? p.sets[+document.getElementById('set-'+id).value].price : p.price;
+  if(p.personalize && p.namePrice){
+    const v = (document.getElementById('pn-'+id).value||'').trim();
+    if(v) price = p.namePrice;
+  }
+  document.getElementById('price-'+id).textContent = money(price);
 }
 
 function addToCart(id){
   const p = PRODUCTS.find(x=>x.id===id);
+  const opts = (p.selects||[]).map(s=>{
+    const el = document.getElementById('opt-'+id+'-'+s.key);
+    return el ? `${s.label}: ${el.value}` : null;
+  }).filter(Boolean);
+  let price = p.price, setLabel = '';
+  if(p.sets){ const si = +document.getElementById('set-'+id).value; price = p.sets[si].price; setLabel = p.sets[si].label; }
   let personalName = '';
   if(p.personalize){
     const inp = document.getElementById('pn-'+id);
     personalName = (inp && inp.value.trim()) || '';
-    if(!personalName){ inp.focus(); inp.style.borderColor='var(--rose)'; inp.placeholder='Please add a name'; return; }
-    inp.value=''; inp.style.borderColor='';
+    if(personalName && p.namePrice) price = p.namePrice;
+    if(inp){ inp.value=''; }
   }
-  const key = id + '|' + personalName.toLowerCase();
-  const existing = cart.find(c => (c.id+'|'+c.personalName.toLowerCase())===key);
+  recalc(id);
+  const suffix = []; if(setLabel) suffix.push(setLabel); suffix.push(...opts);
+  const composed = p.name + (suffix.length ? ' (' + suffix.join(' · ') + ')' : '');
+  const key = (composed + '|' + personalName).toLowerCase();
+  const existing = cart.find(c => ((c.name + '|' + c.personalName).toLowerCase()) === key);
   if(existing){ existing.qty++; }
-  else { cart.push({id:p.id,name:p.name,price:p.price,img:p.img,qty:1,personalName}); }
+  else { cart.push({id:p.id, name:composed, price, img:p.img, qty:1, personalName}); }
   updateCart(); openCart();
 }
 function changeQty(i,d){ cart[i].qty+=d; if(cart[i].qty<=0) cart.splice(i,1); updateCart(); }
 function removeItem(i){ cart.splice(i,1); updateCart(); }
 
 function updateCart(){
-  saveCart();
   const count = cart.reduce((s,c)=>s+c.qty,0);
   const total = cart.reduce((s,c)=>s+c.qty*c.price,0);
   const cc = document.getElementById('cartCount');
@@ -531,44 +546,8 @@ async function checkout(){
   requestAnimationFrame(frame);
 })();
 
-/* =========================================================
-   POST-CHECKOUT — show a confirmation after returning from Stripe.
-   Stripe sends the customer back to /?paid=1 (success) or
-   /?canceled=1 (they backed out). See api/create-checkout-session.js.
-   ========================================================= */
-function showToast(kind, title, body){
-  const t = document.getElementById('toast');
-  document.getElementById('toastTitle').textContent = title;
-  document.getElementById('toastBody').textContent = body;
-  // check-mark for success, info "!" for canceled
-  document.getElementById('toastIcon').setAttribute('d',
-    kind==='ok' ? 'M20 6 9 17l-5-5' : 'M12 8v5 M12 16.5v.5');
-  t.classList.remove('ok','info'); t.classList.add(kind==='ok'?'ok':'info','show');
-  if(kind==='ok') setTimeout(hideToast, 9000);
-}
-function hideToast(){ document.getElementById('toast').classList.remove('show'); }
-
-function handleReturnFromCheckout(){
-  const params = new URLSearchParams(window.location.search);
-  if(params.get('paid')==='1'){
-    cart = []; updateCart();                 // order placed — empty the bag
-    showToast('ok', 'Thank you for your order! 💜',
-      'Your payment went through and a receipt is on its way by email. Made-to-order items ship in 3–7 business days.');
-  } else if(params.get('canceled')==='1'){
-    showToast('info', 'Checkout canceled',
-      'No worries — your bag is saved. Whenever you’re ready, tap the cart to pick up where you left off.');
-  } else {
-    return;
-  }
-  // tidy the URL so a refresh doesn't re-trigger the message
-  if(window.history && history.replaceState){
-    history.replaceState({}, '', window.location.pathname + window.location.hash);
-  }
-}
-
 document.getElementById('yr').textContent = new Date().getFullYear();
 renderShop(); updateCart();
-handleReturnFromCheckout();
 </script>
 </body>
 </html>
