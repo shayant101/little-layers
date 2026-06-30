@@ -201,6 +201,7 @@
     </a>
     <nav class="nav-links">
       <a href="#shop" class="page">Shop</a>
+      <a href="/build" class="page">Build your own ✨</a>
       <a href="#about" class="page">Our story</a>
       <a href="https://www.instagram.com/littlelayersbyirha/" target="_blank" rel="noopener" class="page">Instagram</a>
       <button class="cart-btn" onclick="openCart()" aria-label="Open cart">
@@ -611,10 +612,13 @@ async function checkout(){
 
 document.getElementById('yr').textContent = new Date().getFullYear();
 renderShop(); updateCart();
-// Returning from a canceled checkout — bag is preserved, so reopen it.
-if(new URLSearchParams(location.search).get('canceled') === '1'){
-  if(window.history && history.replaceState) history.replaceState({}, '', location.pathname);
-  openCart();
+// Reopen the bag when returning from a canceled checkout OR from the custom builder.
+{
+  const _q = new URLSearchParams(location.search);
+  if(_q.get('canceled') === '1' || _q.get('cart') === '1'){
+    if(window.history && history.replaceState) history.replaceState({}, '', location.pathname);
+    openCart();
+  }
 }
 </script>
 </body>
