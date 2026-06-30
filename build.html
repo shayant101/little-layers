@@ -220,94 +220,104 @@
   /* ========= product art ========= */
   function roundCaddySVG(s){
     const cc=SWATCHES[s.body], hc=SWATCHES[s.handle];
+    // flat wide ribbon handle (a curved strap, not a round tube)
+    const HANDLE = `M120 206 C120 68 280 68 280 206 L250 206 C250 96 150 96 150 206 Z`;
     return svgWrap(`
-      <clipPath id="bc"><path d="M108 208 L108 332 Q108 380 200 380 Q292 380 292 332 L292 208 Z"/></clipPath>
-      <ellipse cx="204" cy="404" rx="124" ry="22" fill="url(#floor)"/>
-      <path d="M134 214 C134 86 266 86 266 214" fill="none" stroke="${hc}" stroke-width="25" stroke-linecap="round"/>
-      <path d="M134 214 C134 86 266 86 266 214" fill="none" stroke="url(#hg)" stroke-width="25" stroke-linecap="round"/>
-      <path d="M108 208 L108 332 Q108 380 200 380 Q292 380 292 332 L292 208 Z" fill="${cc}"/>
-      <g clip-path="url(#bc)"><rect x="108" y="200" width="184" height="190" fill="url(#cyl)"/><rect x="108" y="200" width="184" height="190" fill="url(#gloss)"/></g>
-      <ellipse cx="200" cy="208" rx="92" ry="30" fill="${shade(cc,22)}"/>
-      <ellipse cx="200" cy="206" rx="74" ry="22" fill="${shade(cc,-60)}"/>
-      <ellipse cx="200" cy="206" rx="74" ry="22" fill="url(#ish)"/>
-      <g stroke="#000" stroke-opacity=".22" stroke-width="5" stroke-linecap="round"><path d="M200 186 L200 226"/><path d="M130 206 L270 206"/></g>
-      <path d="M126 204 A92 30 0 0 1 200 180" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
-      ${nameTextSVG(s,200,332,readableOn(cc),34)}`);
+      <clipPath id="bcR"><path d="M110 200 L110 360 Q110 392 200 392 Q290 392 290 360 L290 200 Z"/></clipPath>
+      <ellipse cx="206" cy="410" rx="116" ry="20" fill="url(#floor)"/>
+      <path d="${HANDLE}" fill="${hc}"/>
+      <path d="${HANDLE}" fill="url(#hg)"/>
+      <path d="M150 206 C150 96 250 96 250 206" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="3"/>
+      <path d="M110 200 A90 28 0 0 0 290 200 L290 360 Q290 392 200 392 Q110 392 110 360 Z" fill="${cc}"/>
+      <g clip-path="url(#bcR)"><rect x="110" y="196" width="180" height="200" fill="url(#cyl)"/><rect x="110" y="196" width="180" height="200" fill="url(#gloss)"/></g>
+      <ellipse cx="200" cy="200" rx="90" ry="28" fill="${shade(cc,20)}"/>
+      <ellipse cx="200" cy="200" rx="73" ry="21" fill="${shade(cc,-55)}"/>
+      <ellipse cx="200" cy="200" rx="73" ry="21" fill="url(#ish)"/>
+      <g stroke="${shade(cc,-28)}" stroke-width="6" stroke-linecap="round"><path d="M200 180 L200 220"/><path d="M132 200 L268 200"/></g>
+      <path d="M128 198 A90 28 0 0 1 200 174" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+      ${nameTextSVG(s,200,340,readableOn(cc),34)}`);
   }
   function ribbedCaddySVG(s){
     const cc=SWATCHES[s.body], hc=SWATCHES[s.handle];
     let ribs='';
-    for(let x=84;x<=316;x+=15){
-      ribs += `<path d="M${x} 200 L${x} 352" stroke="#000" stroke-opacity=".09" stroke-width="7" stroke-linecap="round"/>`;
-      ribs += `<path d="M${x+4} 200 L${x+4} 352" stroke="#fff" stroke-opacity=".16" stroke-width="3" stroke-linecap="round"/>`;
+    for(let x=56;x<=344;x+=11){
+      ribs += `<path d="M${x} 214 L${x} 348" stroke="#000" stroke-opacity=".10" stroke-width="6" stroke-linecap="round"/>`;
+      ribs += `<path d="M${x+3} 214 L${x+3} 348" stroke="#fff" stroke-opacity=".15" stroke-width="3" stroke-linecap="round"/>`;
     }
+    // central flat handle-plate with an oval grip hole (evenodd punches the hole through)
+    const PLATE = `M150 214 L150 96 Q150 70 176 70 L224 70 Q250 70 250 96 L250 214 Z M178 150 Q178 112 200 112 Q222 112 222 150 L222 178 Q222 196 200 196 Q178 196 178 178 Z`;
     return svgWrap(`
-      <clipPath id="bc2"><path d="M70 196 L70 324 Q70 366 200 366 Q330 366 330 324 L330 196 Z"/></clipPath>
-      <ellipse cx="206" cy="400" rx="150" ry="24" fill="url(#floor)"/>
-      <path d="M104 200 C104 92 296 92 296 200" fill="none" stroke="${hc}" stroke-width="24" stroke-linecap="round"/>
-      <path d="M104 200 C104 92 296 92 296 200" fill="none" stroke="url(#hg)" stroke-width="24" stroke-linecap="round"/>
-      <path d="M70 196 L70 324 Q70 366 200 366 Q330 366 330 324 L330 196 Z" fill="${cc}"/>
-      <g clip-path="url(#bc2)">${ribs}<rect x="70" y="190" width="260" height="200" fill="url(#cyl)"/><rect x="70" y="190" width="260" height="200" fill="url(#gloss)"/></g>
-      <ellipse cx="200" cy="196" rx="130" ry="34" fill="${shade(cc,22)}"/>
-      <ellipse cx="200" cy="194" rx="112" ry="26" fill="${shade(cc,-60)}"/>
-      <ellipse cx="200" cy="194" rx="112" ry="26" fill="url(#ish)"/>
-      <path d="M88 190 A130 34 0 0 1 200 160" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>`);
+      <clipPath id="bcP"><path d="M46 214 L46 338 Q46 364 92 364 L308 364 Q354 364 354 338 L354 214 Z"/></clipPath>
+      <ellipse cx="206" cy="392" rx="158" ry="22" fill="url(#floor)"/>
+      <path d="M46 214 A154 30 0 0 0 354 214 L354 338 Q354 364 308 364 L92 364 Q46 364 46 338 Z" fill="${cc}"/>
+      <g clip-path="url(#bcP)">${ribs}<rect x="46" y="210" width="308" height="160" fill="url(#cyl)"/><rect x="46" y="210" width="308" height="160" fill="url(#gloss)"/></g>
+      <ellipse cx="200" cy="214" rx="154" ry="30" fill="${shade(cc,20)}"/>
+      <ellipse cx="200" cy="212" rx="138" ry="22" fill="${shade(cc,-55)}"/>
+      <ellipse cx="200" cy="212" rx="138" ry="22" fill="url(#ish)"/>
+      <path d="${PLATE}" fill="${hc}" fill-rule="evenodd"/>
+      <path d="${PLATE}" fill="url(#hg)" fill-rule="evenodd"/>
+      <path d="M160 206 L160 96 Q160 80 176 80 L224 80" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="3"/>`);
   }
   function drawTray(cx,cy,rx,ry,colorName,idx,nameStr){
     const c=SWATCHES[colorName]||colorName;
-    const outer=wavyPath(cx,cy,rx,ry,9,0.07);
-    const inner=wavyPath(cx,cy-3,rx*0.72,ry*0.72,9,0.07);
-    const wall=wavyPath(cx,cy+15,rx,ry,9,0.07);
+    const outer=wavyPath(cx,cy,rx,ry,13,0.13);
+    const lip=wavyPath(cx,cy,rx*0.9,ry*0.8,13,0.13);
+    const inner=wavyPath(cx,cy-2,rx*0.78,ry*0.6,13,0.11);
+    const wall=wavyPath(cx,cy+12,rx,ry,13,0.13);
+    // woven mesh = diagonal cross-hatch (diamond net)
     let net='';
-    for(let i=-Math.round(rx);i<=rx;i+=11){
-      net+=`<path d="M${(cx+i).toFixed(1)} ${cy-ry} L${(cx+i).toFixed(1)} ${cy+ry}" stroke="${shade(c,-45)}" stroke-opacity=".45" stroke-width="2"/>`;
+    for(let d=-Math.round(rx*1.4); d<=rx*1.4; d+=9){
+      net+=`<path d="M${(cx+d-ry).toFixed(1)} ${cy-ry} L${(cx+d+ry).toFixed(1)} ${cy+ry}" stroke="${shade(c,-38)}" stroke-opacity=".4" stroke-width="2"/>`;
+      net+=`<path d="M${(cx+d-ry).toFixed(1)} ${cy+ry} L${(cx+d+ry).toFixed(1)} ${cy-ry}" stroke="${shade(c,-38)}" stroke-opacity=".4" stroke-width="2"/>`;
     }
-    for(let j=-Math.round(ry);j<=ry;j+=11){
-      net+=`<path d="M${cx-rx} ${(cy+j).toFixed(1)} L${cx+rx} ${(cy+j).toFixed(1)}" stroke="${shade(c,-45)}" stroke-opacity=".45" stroke-width="2"/>`;
-    }
-    const nm = nameStr ? `<text x="${cx}" y="${(cy+ry*0.16).toFixed(1)}" text-anchor="middle" font-family="Pacifico, cursive" font-size="30" fill="${readableOn(c)}">${esc(nameStr)}</text>` : '';
+    const nm = nameStr ? `<text x="${cx}" y="${(cy+9).toFixed(1)}" text-anchor="middle" font-family="Pacifico, cursive" font-size="30" fill="${readableOn(shade(c,-18))}">${esc(nameStr)}</text>` : '';
     return `
-      <path d="${wall}" fill="${shade(c,-50)}"/>
+      <path d="${wall}" fill="${shade(c,-46)}"/>
       <path d="${outer}" fill="${c}"/>
+      <path d="${lip}" fill="${shade(c,14)}"/>
       <clipPath id="net${idx}"><path d="${inner}"/></clipPath>
-      <path d="${inner}" fill="${shade(c,-24)}"/>
+      <path d="${inner}" fill="${shade(c,-18)}"/>
       <g clip-path="url(#net${idx})">${net}</g>
-      <path d="${inner}" fill="none" stroke="${shade(c,-42)}" stroke-width="3"/>
+      <path d="${inner}" fill="none" stroke="${shade(c,-36)}" stroke-width="3"/>
       ${nm}`;
   }
   function doodleSmallSVG(s){
     return svgWrap(`
-      <ellipse cx="206" cy="392" rx="152" ry="22" fill="url(#floor)"/>
-      ${drawTray(252,196,94,68,s.col2,'b','')}
-      ${drawTray(158,268,104,76,s.col1,'a','')}`);
+      <ellipse cx="206" cy="392" rx="172" ry="20" fill="url(#floor)"/>
+      ${drawTray(206,166,152,42,s.col2,'b','')}
+      ${drawTray(196,286,166,48,s.col1,'a','')}`);
   }
   function doodleLargeSVG(s){
     return svgWrap(`
-      <ellipse cx="204" cy="392" rx="150" ry="22" fill="url(#floor)"/>
-      ${drawTray(200,234,140,104,s.body,'L',s.name)}`);
+      <ellipse cx="204" cy="394" rx="176" ry="20" fill="url(#floor)"/>
+      ${drawTray(200,232,178,58,s.body,'L',s.name)}`);
   }
   function flowerSVG(s){
     const pc=SWATCHES[s.body], fc=SWATCHES[s.flower];
-    const cx=200, cy=230, R=72, pr=44;
-    let back='', top='';
-    for(let i=0;i<6;i++){ const a=(i/6)*Math.PI*2 - Math.PI/2;
-      const x=cx+Math.cos(a)*R, y=cy+Math.sin(a)*R*0.6;
-      back += `<ellipse cx="${x.toFixed(1)}" cy="${(y+20).toFixed(1)}" rx="${pr}" ry="${(pr*0.92).toFixed(1)}" fill="${shade(pc,-55)}"/>`;
+    const cx=200, cy=222, R=80, pr=47, H=42;   // 6 petals around 1 centre tube, with body height H
+    const pts=[]; for(let i=0;i<6;i++){ const a=(i/6)*Math.PI*2 - Math.PI/2; pts.push([cx+Math.cos(a)*R, cy+Math.sin(a)*R*0.9]); }
+    pts.push([cx,cy]);
+    let bottom='', clip='';
+    pts.forEach(p=>{ bottom += `<ellipse cx="${p[0].toFixed(1)}" cy="${(p[1]+H).toFixed(1)}" rx="${pr}" ry="${(pr*0.88).toFixed(1)}" fill="${shade(pc,-46)}"/>`;
+                     clip   += `<ellipse cx="${p[0].toFixed(1)}" cy="${(p[1]+H).toFixed(1)}" rx="${pr}" ry="${(pr*0.88).toFixed(1)}"/>`; });
+    let ribs='';
+    for(let x=cx-R-pr; x<=cx+R+pr; x+=11){
+      ribs += `<path d="M${x.toFixed(1)} ${cy} L${x.toFixed(1)} ${cy+H+44}" stroke="#000" stroke-opacity=".10" stroke-width="6"/>`;
+      ribs += `<path d="M${(x+3).toFixed(1)} ${cy} L${(x+3).toFixed(1)} ${cy+H+44}" stroke="#fff" stroke-opacity=".10" stroke-width="3"/>`;
     }
-    for(let i=0;i<6;i++){ const a=(i/6)*Math.PI*2 - Math.PI/2;
-      const x=cx+Math.cos(a)*R, y=cy+Math.sin(a)*R*0.6;
-      top += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${pr}" ry="${(pr*0.92).toFixed(1)}" fill="${pc}"/>`;
-      top += `<ellipse cx="${x.toFixed(1)}" cy="${(y-1).toFixed(1)}" rx="${(pr*0.62).toFixed(1)}" ry="${(pr*0.56).toFixed(1)}" fill="${shade(pc,-52)}"/>`;
-      top += `<ellipse cx="${(x-pr*0.3).toFixed(1)}" cy="${(y-pr*0.42).toFixed(1)}" rx="10" ry="6" fill="#fff" fill-opacity=".32"/>`;
-    }
-    const center = `
-      <ellipse cx="${cx}" cy="${cy+18}" rx="58" ry="52" fill="${shade(fc,-55)}"/>
-      <ellipse cx="${cx}" cy="${cy}" rx="58" ry="52" fill="${fc}"/>
-      <ellipse cx="${cx}" cy="${cy-2}" rx="34" ry="30" fill="${shade(fc,-48)}"/>
-      <ellipse cx="${cx-16}" cy="${cy-22}" rx="12" ry="8" fill="#fff" fill-opacity=".4"/>`;
+    let tops='';
+    pts.forEach(p=>{
+      tops += `<ellipse cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" rx="${pr}" ry="${(pr*0.88).toFixed(1)}" fill="${pc}"/>`;
+      tops += `<ellipse cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" rx="${(pr*0.68).toFixed(1)}" ry="${(pr*0.6).toFixed(1)}" fill="${fc}"/>`;
+      tops += `<ellipse cx="${p[0].toFixed(1)}" cy="${(p[1]+2).toFixed(1)}" rx="${(pr*0.52).toFixed(1)}" ry="${(pr*0.44).toFixed(1)}" fill="${shade(fc,-42)}"/>`;
+      tops += `<ellipse cx="${(p[0]-pr*0.28).toFixed(1)}" cy="${(p[1]-pr*0.34).toFixed(1)}" rx="9" ry="6" fill="#fff" fill-opacity=".32"/>`;
+    });
     return svgWrap(`
-      <ellipse cx="204" cy="392" rx="140" ry="24" fill="url(#floor)"/>
-      ${back}${top}${center}`);
+      <ellipse cx="204" cy="400" rx="142" ry="22" fill="url(#floor)"/>
+      ${bottom}
+      <clipPath id="flClip">${clip}</clipPath>
+      <g clip-path="url(#flClip)">${ribs}</g>
+      ${tops}`);
   }
 
   /* ========= state + flow ========= */
