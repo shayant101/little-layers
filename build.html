@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Build your own — Little Layers</title>
+<link rel="icon" type="image/png" href="photos/logo_icon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Pacifico&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --paper:#FFFCF8; --ink:#2B2530; --muted:#7A7280;
+    --rose:#E8688F; --rose-deep:#D2497A; --sky:#79C2D2; --gold:#EAC15D; --lilac:#B49BDD;
+    --line:#F0E7EE; --card:#FFFFFF; --radius:18px; --shadow:0 14px 36px rgba(80,40,70,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--paper);line-height:1.5;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,.name{font-family:'Poppins';letter-spacing:-.01em}
+  a{color:inherit;text-decoration:none}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;font-family:'Inter';
+    font-weight:600;font-size:15px;padding:14px 24px;border-radius:999px;transition:transform .15s,background .15s,box-shadow .15s}
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--ink);color:#fff;width:100%}
+  .btn-primary:hover{background:#3d3543}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+
+  header{position:sticky;top:0;z-index:20;background:rgba(255,252,248,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav{max-width:1180px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:14px 22px}
+  .logo{display:flex;align-items:center;gap:10px}
+  .logo img{height:34px}
+  .logo .name{font-family:'Poppins';font-weight:500;font-size:19px}
+  .nav a.back{font-size:14px;color:var(--muted);font-weight:500}
+  .nav a.back:hover{color:var(--ink)}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 22px 60px;display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:start}
+
+  /* ---- live preview ---- */
+  .stage{position:sticky;top:90px;background:
+      radial-gradient(60% 50% at 30% 25%, rgba(232,104,143,.12), transparent 70%),
+      radial-gradient(55% 50% at 75% 80%, rgba(121,194,210,.14), transparent 70%),
+      linear-gradient(180deg,#FFF6FA,#F6FBFB);
+    border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:18px;display:grid;place-items:center;min-height:440px}
+  .stage svg{width:100%;max-width:420px;height:auto;display:block}
+  #caddyWall,#caddyRimTop,#caddyBottom{transition:fill .35s ease}
+  #handle{transition:stroke .35s ease}
+  #nameText{transition:opacity .2s}
+
+  /* ---- builder steps ---- */
+  .eyebrow{font-size:12.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--rose-deep)}
+  .head h1{font-size:clamp(26px,3.4vw,34px);font-weight:700;margin:8px 0 6px}
+  .head p{color:var(--muted);font-size:15.5px;margin-bottom:8px}
+  .step{border:1px solid var(--line);border-radius:var(--radius);background:var(--card);padding:18px 20px;margin-top:16px;box-shadow:0 4px 14px rgba(80,40,70,.04)}
+  .step .lbl{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .step .num{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-family:'Poppins';font-weight:600;font-size:13px;display:grid;place-items:center;flex:none}
+  .step h3{font-size:17px;font-weight:600}
+  .step .pick{margin-left:auto;font-size:13px;color:var(--muted)}
+  .step .pick b{color:var(--ink);font-weight:600}
+  .swatches{display:flex;gap:12px;flex-wrap:wrap}
+  .sw{width:42px;height:42px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0;transition:transform .12s,box-shadow .12s}
+  .sw:hover{transform:scale(1.1)}
+  .sw.active{box-shadow:0 0 0 3px var(--ink)}
+  .namewrap{position:relative}
+  .namewrap input{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:13px 15px;font-family:'Inter';font-size:15px}
+  .namewrap input:focus{outline:none;border-color:var(--rose)}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:8px}
+  .hint b{color:var(--rose-deep)}
+
+  .summary{margin-top:22px;border-top:1px solid var(--line);padding-top:18px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .summary .price{font-family:'Poppins';font-weight:700;font-size:26px}
+  .summary .price small{font-family:'Inter';font-weight:500;font-size:13px;color:var(--muted)}
+  .summary .cta{flex:1;min-width:200px}
+  .added{font-size:13px;color:#2e9e7a;font-weight:600;margin-top:8px;display:none}
+
+  @media(max-width:880px){
+    .wrap{grid-template-columns:1fr;gap:24px}
+    .stage{position:relative;top:0;min-height:auto}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <a href="/" class="logo"><img src="photos/logo_icon.png" alt="Little Layers" /><span class="name">little layers</span></a>
+      <a href="/" class="back">← Back to shop</a>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- LIVE PREVIEW -->
+    <div class="stage">
+      <svg viewBox="0 0 400 430" xmlns="http://www.w3.org/2000/svg" aria-label="Live caddy preview">
+        <defs>
+          <linearGradient id="bodyShade" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#fff" stop-opacity=".35"/>
+            <stop offset=".45" stop-color="#fff" stop-opacity="0"/>
+            <stop offset="1" stop-color="#000" stop-opacity=".18"/>
+          </linearGradient>
+          <linearGradient id="handleShade" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#fff" stop-opacity=".45"/>
+            <stop offset="1" stop-color="#000" stop-opacity=".12"/>
+          </linearGradient>
+          <radialGradient id="floor" cx="50%" cy="50%" r="50%">
+            <stop offset="0" stop-color="#000" stop-opacity=".16"/>
+            <stop offset="1" stop-color="#000" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+
+        <!-- floor shadow -->
+        <ellipse cx="200" cy="392" rx="118" ry="22" fill="url(#floor)"/>
+
+        <!-- handle (behind body) -->
+        <path id="handle" d="M138 250 C138 110 262 110 262 250" fill="none" stroke="#FAD24A" stroke-width="26" stroke-linecap="round"/>
+        <path d="M138 250 C138 110 262 110 262 250" fill="none" stroke="url(#handleShade)" stroke-width="26" stroke-linecap="round"/>
+
+        <!-- caddy body -->
+        <g>
+          <!-- cylinder wall + rounded bottom -->
+          <path id="caddyWall" d="M120 228 L120 330 Q120 372 200 372 Q280 372 280 330 L280 228 Z" fill="#F4813C"/>
+          <!-- rim top -->
+          <ellipse id="caddyRimTop" cx="200" cy="228" rx="80" ry="26" fill="#F4813C"/>
+          <!-- inner opening (depth, color-independent) -->
+          <ellipse cx="200" cy="226" rx="66" ry="20" fill="#000" fill-opacity=".22"/>
+          <!-- compartment divider -->
+          <path d="M200 207 L200 245 M138 226 L262 226" stroke="#000" stroke-opacity=".16" stroke-width="5" stroke-linecap="round"/>
+          <!-- lighting overlay on body -->
+          <path d="M120 228 L120 330 Q120 372 200 372 Q280 372 280 330 L280 228 Z" fill="url(#bodyShade)"/>
+          <!-- printed name -->
+          <text id="nameText" x="200" y="320" text-anchor="middle" font-family="Pacifico, cursive" font-size="34" fill="#fff" opacity="0" style="paint-order:stroke" stroke="#000" stroke-opacity=".06" stroke-width="1"></text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- BUILDER -->
+    <div class="builder">
+      <div class="head">
+        <span class="eyebrow">Build your own</span>
+        <h1>Design your Caddy</h1>
+        <p>Pick your colors, add a name, and watch it come to life. Made to order, just for you.</p>
+      </div>
+
+      <div class="step">
+        <div class="lbl"><span class="num">1</span><h3>Item</h3><span class="pick">Round Caddy</span></div>
+        <div class="swatches" id="items"></div>
+      </div>
+
+      <div class="step">
+        <div class="lbl"><span class="num">2</span><h3>Caddy color</h3><span class="pick" id="caddyPick"><b>Orange</b></span></div>
+        <div class="swatches" id="caddyColors"></div>
+      </div>
+
+      <div class="step">
+        <div class="lbl"><span class="num">3</span><h3>Handle color</h3><span class="pick" id="handlePick"><b>Yellow</b></span></div>
+        <div class="swatches" id="handleColors"></div>
+      </div>
+
+      <div class="step">
+        <div class="lbl"><span class="num">4</span><h3>Add a name</h3><span class="pick">Optional · +$7</span></div>
+        <div class="namewrap">
+          <input id="nameInput" type="text" maxlength="14" placeholder="e.g. Irha" oninput="onName()" />
+        </div>
+        <p class="hint" id="nameHint">Printed in white on the front. Watch it appear above as you type. ✨</p>
+      </div>
+
+      <div class="summary">
+        <div class="price"><span id="price">$25.00</span> <small>+ shipping</small></div>
+        <button class="btn btn-primary cta" onclick="addToBag()">Add to bag</button>
+      </div>
+      <p class="added" id="added">✓ Added to your bag — taking you to checkout…</p>
+    </div>
+  </div>
+
+<script>
+  const SWATCHES = { Yellow:'#FAD24A', Purple:'#A77BD8', Green:'#7FC889', Orange:'#F4813C', Blue:'#5EB7DA', Pink:'#F08CB0' };
+  const CADDY_COLORS = ['Yellow','Purple','Green','Orange','Blue','Pink'];
+  const HANDLE_COLORS = ['Yellow','Blue','Pink','Purple','Green','Orange'];
+  const BASE = 25, NAME_PRICE = 32;
+
+  const state = { caddy:'Orange', handle:'Yellow', name:'' };
+
+  function money(n){ return '$' + n.toFixed(2); }
+  function shade(hex, amt){ // lighten(+)/darken(-) a hex
+    const n = parseInt(hex.slice(1),16); let r=(n>>16)+amt, g=((n>>8)&255)+amt, b=(n&255)+amt;
+    r=Math.max(0,Math.min(255,r)); g=Math.max(0,Math.min(255,g)); b=Math.max(0,Math.min(255,b));
+    return '#'+(r<<16|g<<8|b).toString(16).padStart(6,'0');
+  }
+
+  function renderSwatches(elId, colors, key){
+    document.getElementById(elId).innerHTML = colors.map(c =>
+      `<button type="button" class="sw${state[key]===c?' active':''}" title="${c}" aria-label="${c}" style="background:${SWATCHES[c]}" onclick="pick('${key}','${c}')"></button>`
+    ).join('');
+  }
+  function pick(key, c){
+    state[key] = c;
+    renderSwatches(key==='caddy'?'caddyColors':'handleColors', key==='caddy'?CADDY_COLORS:HANDLE_COLORS, key);
+    paint();
+  }
+  function paint(){
+    const cc = SWATCHES[state.caddy], hc = SWATCHES[state.handle];
+    document.getElementById('caddyWall').setAttribute('fill', cc);
+    document.getElementById('caddyBottom') && document.getElementById('caddyBottom').setAttribute('fill', cc);
+    document.getElementById('caddyRimTop').setAttribute('fill', shade(cc, 14));
+    document.getElementById('handle').setAttribute('stroke', hc);
+    document.getElementById('caddyPick').innerHTML = '<b>'+state.caddy+'</b>';
+    document.getElementById('handlePick').innerHTML = '<b>'+state.handle+'</b>';
+    // name contrast: white on dark colors, ink on very light (yellow) for legibility
+    const t = document.getElementById('nameText');
+    t.setAttribute('fill', state.caddy==='Yellow' ? '#2B2530' : '#ffffff');
+    updatePrice();
+  }
+  function onName(){
+    state.name = document.getElementById('nameInput').value.trim();
+    const t = document.getElementById('nameText');
+    t.textContent = state.name;
+    t.style.opacity = state.name ? 1 : 0;
+    updatePrice();
+  }
+  function updatePrice(){
+    document.getElementById('price').textContent = money(state.name ? NAME_PRICE : BASE);
+  }
+
+  function addToBag(){
+    const price = state.name ? NAME_PRICE : BASE;
+    const item = {
+      id:'orangecaddy',
+      name:`Custom Caddy (Caddy: ${state.caddy} · Handle: ${state.handle})`,
+      price, img:'photos/caddy.jpg', qty:1, personalName: state.name || ''
+    };
+    try{
+      const KEY='littlelayers.cart';
+      const cart = JSON.parse(localStorage.getItem(KEY)) || [];
+      const arr = Array.isArray(cart)?cart:[];
+      arr.push(item);
+      localStorage.setItem(KEY, JSON.stringify(arr));
+    }catch(e){}
+    document.getElementById('added').style.display='block';
+    setTimeout(()=>{ window.location = '/?cart=1'; }, 700);
+  }
+
+  // item picker (one item for now; structure ready for more)
+  document.getElementById('items').innerHTML =
+    `<button type="button" class="sw active" title="Round Caddy" style="background:#F4813C"></button>`;
+  renderSwatches('caddyColors', CADDY_COLORS, 'caddy');
+  renderSwatches('handleColors', HANDLE_COLORS, 'handle');
+  paint();
+</script>
+</body>
+</html>
