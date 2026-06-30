@@ -13,6 +13,7 @@
     --paper:#FFFCF8; --ink:#2B2530; --muted:#7A7280;
     --rose:#E8688F; --rose-deep:#D2497A; --sky:#79C2D2; --gold:#EAC15D; --lilac:#B49BDD;
     --line:#F0E7EE; --card:#FFFFFF; --radius:18px; --shadow:0 14px 36px rgba(80,40,70,.12);
+    --shadow-sm:0 6px 18px rgba(80,40,70,.07);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--paper);line-height:1.5;-webkit-font-smoothing:antialiased}
@@ -31,10 +32,29 @@
   .logo .name{font-family:'Poppins';font-weight:500;font-size:19px}
   .nav a.back{font-size:14px;color:var(--muted);font-weight:500}
   .nav a.back:hover{color:var(--ink)}
+  .eyebrow{font-size:12.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--rose-deep)}
 
-  .wrap{max-width:1180px;margin:0 auto;padding:28px 22px 60px;display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:start}
+  /* ===== STEP 1 — product picker ===== */
+  .picker{max-width:1180px;margin:0 auto;padding:34px 22px 72px}
+  .picker .phead{text-align:center;max-width:640px;margin:0 auto 32px}
+  .picker .phead h1{font-size:clamp(28px,4vw,40px);font-weight:700;margin:10px 0 8px}
+  .picker .phead p{color:var(--muted);font-size:16px}
+  .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .pcard{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;cursor:pointer;font-family:inherit;color:inherit;display:flex;flex-direction:column;transition:transform .18s,box-shadow .18s}
+  .pcard:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+  .pimg{aspect-ratio:1/1;overflow:hidden;background:linear-gradient(150deg,#FBE3EC,#E7F1F6)}
+  .pimg img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+  .pcard:hover .pimg img{transform:scale(1.05)}
+  .pbody{padding:16px 18px 20px;display:flex;flex-direction:column;flex:1}
+  .pcat{font-size:11px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+  .pbody h3{font-size:19px;font-weight:600;margin-top:3px}
+  .pbody p{color:var(--muted);font-size:13.5px;margin-top:6px;flex:1}
+  .pfrom{margin-top:14px;display:inline-flex;align-items:center;gap:8px}
+  .pfrom .from{font-family:'Poppins';font-weight:600;font-size:14px;color:var(--ink)}
+  .pfrom .go{margin-left:auto;font-size:13px;font-weight:600;color:var(--rose-deep)}
 
-  /* ---- live preview ---- */
+  /* ===== STEP 2+ — customizer ===== */
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 22px 64px;display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:start}
   .stage{position:sticky;top:90px;perspective:1100px;background:
       radial-gradient(60% 50% at 30% 22%, rgba(232,104,143,.12), transparent 70%),
       radial-gradient(55% 50% at 75% 82%, rgba(121,194,210,.14), transparent 70%),
@@ -44,14 +64,11 @@
   .tilt.sway{animation:sway 6s ease-in-out infinite}
   @keyframes sway{0%,100%{transform:rotateY(-6deg)}50%{transform:rotateY(6deg)}}
   .stage svg{width:100%;max-width:430px;height:auto;display:block}
-  #caddyBody,#caddyRim,#caddyInner{transition:fill .35s ease}
-  #handle{transition:stroke .35s ease}
-  #nameText{transition:opacity .2s}
 
-  /* ---- builder steps ---- */
-  .eyebrow{font-size:12.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--rose-deep)}
-  .head h1{font-size:clamp(26px,3.4vw,34px);font-weight:700;margin:8px 0 6px}
-  .head p{color:var(--muted);font-size:15.5px;margin-bottom:8px}
+  .changelink{font-size:13.5px;color:var(--muted);font-weight:600;display:inline-flex;align-items:center;gap:6px;margin-bottom:6px;cursor:pointer;background:none;border:none;font-family:inherit;padding:0}
+  .changelink:hover{color:var(--ink)}
+  .head h1{font-size:clamp(26px,3.4vw,34px);font-weight:700;margin:6px 0 6px}
+  .head p{color:var(--muted);font-size:15.5px;margin-bottom:6px}
   .step{border:1px solid var(--line);border-radius:var(--radius);background:var(--card);padding:18px 20px;margin-top:16px;box-shadow:0 4px 14px rgba(80,40,70,.04)}
   .step .lbl{display:flex;align-items:center;gap:10px;margin-bottom:14px}
   .step .num{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-family:'Poppins';font-weight:600;font-size:13px;display:grid;place-items:center;flex:none}
@@ -62,6 +79,10 @@
   .sw{width:42px;height:42px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0;transition:transform .12s,box-shadow .12s}
   .sw:hover{transform:scale(1.1)}
   .sw.active{box-shadow:0 0 0 3px var(--ink)}
+  .sets{display:flex;gap:10px;flex-wrap:wrap}
+  .setbtn{border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;padding:11px 16px;font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;transition:.15s}
+  .setbtn:hover{border-color:var(--ink)}
+  .setbtn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
   .namewrap input{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:13px 15px;font-family:'Inter';font-size:15px}
   .namewrap input:focus{outline:none;border-color:var(--rose)}
   .hint{font-size:12.5px;color:var(--muted);margin-top:8px}
@@ -75,7 +96,9 @@
   @media(max-width:880px){
     .wrap{grid-template-columns:1fr;gap:24px}
     .stage{position:relative;top:0;min-height:auto}
+    .pgrid{grid-template-columns:1fr 1fr}
   }
+  @media(max-width:560px){.pgrid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -86,162 +109,294 @@
     </div>
   </header>
 
-  <div class="wrap">
-    <!-- LIVE PREVIEW -->
-    <div class="stage" id="stage">
-      <div class="tilt" id="tilt">
-      <svg viewBox="0 0 400 450" xmlns="http://www.w3.org/2000/svg" aria-label="Live caddy preview">
-        <defs>
-          <linearGradient id="cylShade" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#fff" stop-opacity=".42"/>
-            <stop offset=".34" stop-color="#fff" stop-opacity="0"/>
-            <stop offset=".8" stop-color="#000" stop-opacity=".10"/>
-            <stop offset="1" stop-color="#000" stop-opacity=".30"/>
-          </linearGradient>
-          <linearGradient id="sideGloss" x1="0" y1="0" x2="1" y2="0">
-            <stop offset=".06" stop-color="#fff" stop-opacity="0"/>
-            <stop offset=".16" stop-color="#fff" stop-opacity=".55"/>
-            <stop offset=".27" stop-color="#fff" stop-opacity="0"/>
-            <stop offset=".82" stop-color="#000" stop-opacity="0"/>
-            <stop offset="1" stop-color="#000" stop-opacity=".14"/>
-          </linearGradient>
-          <linearGradient id="handleGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#fff" stop-opacity=".55"/>
-            <stop offset=".5" stop-color="#fff" stop-opacity="0"/>
-            <stop offset="1" stop-color="#000" stop-opacity=".18"/>
-          </linearGradient>
-          <radialGradient id="innerShadow" cx="50%" cy="38%" r="62%">
-            <stop offset="0" stop-color="#000" stop-opacity="0"/>
-            <stop offset="1" stop-color="#000" stop-opacity=".45"/>
-          </radialGradient>
-          <radialGradient id="floor" cx="50%" cy="50%" r="50%">
-            <stop offset="0" stop-color="#000" stop-opacity=".18"/>
-            <stop offset="1" stop-color="#000" stop-opacity="0"/>
-          </radialGradient>
-          <clipPath id="bodyClip"><path d="M108 208 L108 332 Q108 380 200 380 Q292 380 292 332 L292 208 Z"/></clipPath>
-        </defs>
-
-        <!-- floor shadow -->
-        <ellipse cx="204" cy="404" rx="124" ry="22" fill="url(#floor)"/>
-
-        <!-- handle (behind body) -->
-        <path id="handle" d="M134 214 C134 86 266 86 266 214" fill="none" stroke="#FAD24A" stroke-width="25" stroke-linecap="round"/>
-        <path d="M134 214 C134 86 266 86 266 214" fill="none" stroke="url(#handleGrad)" stroke-width="25" stroke-linecap="round"/>
-        <path d="M134 214 C134 86 266 86 266 214" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5" stroke-linecap="round" transform="translate(-4 -3)"/>
-
-        <!-- caddy body -->
-        <path id="caddyBody" d="M108 208 L108 332 Q108 380 200 380 Q292 380 292 332 L292 208 Z" fill="#F4813C"/>
-        <!-- cylinder shading + side gloss (clipped to body) -->
-        <g clip-path="url(#bodyClip)">
-          <rect x="108" y="200" width="184" height="190" fill="url(#cylShade)"/>
-          <rect x="108" y="200" width="184" height="190" fill="url(#sideGloss)"/>
-        </g>
-
-        <!-- rim lip -->
-        <ellipse id="caddyRim" cx="200" cy="208" rx="92" ry="30" fill="#F79A5C"/>
-        <!-- inner opening -->
-        <ellipse id="caddyInner" cx="200" cy="206" rx="74" ry="22" fill="#C25A22"/>
-        <ellipse cx="200" cy="206" rx="74" ry="22" fill="url(#innerShadow)"/>
-        <!-- compartment dividers -->
-        <g stroke="#000" stroke-opacity=".22" stroke-width="5" stroke-linecap="round">
-          <path d="M200 186 L200 226"/>
-          <path d="M130 206 L270 206"/>
-        </g>
-        <!-- rim highlight -->
-        <path d="M126 204 A92 30 0 0 1 200 180" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
-
-        <!-- printed name -->
-        <text id="nameText" x="200" y="330" text-anchor="middle" font-family="Pacifico, cursive" font-size="34" fill="#fff" opacity="0"></text>
-      </svg>
-      </div>
+  <!-- STEP 1 — choose a product -->
+  <section class="picker" id="picker">
+    <div class="phead">
+      <span class="eyebrow">Build your own ✨</span>
+      <h1>Pick a piece to design</h1>
+      <p>Choose a product to start. Next you'll pick the colors for each part, add a name, and watch it come to life.</p>
     </div>
+    <div class="pgrid" id="pgrid"></div>
+  </section>
 
-    <!-- BUILDER -->
+  <!-- STEP 2+ — customize the chosen product -->
+  <section class="wrap" id="customizer" style="display:none">
+    <div class="stage" id="stage">
+      <div class="tilt" id="tilt"></div>
+    </div>
     <div class="builder">
+      <button class="changelink" onclick="showPicker()">← Choose a different piece</button>
       <div class="head">
         <span class="eyebrow">Build your own</span>
-        <h1>Design your Caddy</h1>
+        <h1 id="bTitle">Design your piece</h1>
         <p>Pick your colors, add a name, and watch it come to life. Move your cursor over it to see it turn. ✨</p>
       </div>
-
-      <div class="step">
-        <div class="lbl"><span class="num">1</span><h3>Item</h3><span class="pick">Round Caddy</span></div>
-        <div class="swatches" id="items"></div>
-      </div>
-      <div class="step">
-        <div class="lbl"><span class="num">2</span><h3>Caddy color</h3><span class="pick" id="caddyPick"><b>Orange</b></span></div>
-        <div class="swatches" id="caddyColors"></div>
-      </div>
-      <div class="step">
-        <div class="lbl"><span class="num">3</span><h3>Handle color</h3><span class="pick" id="handlePick"><b>Yellow</b></span></div>
-        <div class="swatches" id="handleColors"></div>
-      </div>
-      <div class="step">
-        <div class="lbl"><span class="num">4</span><h3>Add a name</h3><span class="pick">Optional · +$7</span></div>
-        <div class="namewrap"><input id="nameInput" type="text" maxlength="14" placeholder="e.g. Irha" oninput="onName()" /></div>
-        <p class="hint">Printed in white on the front. Watch it appear above as you type. ✨</p>
-      </div>
-
+      <div id="steps"></div>
       <div class="summary">
         <div class="price"><span id="price">$25.00</span> <small>+ shipping</small></div>
         <button class="btn btn-primary cta" onclick="addToBag()">Add to bag</button>
       </div>
       <p class="added" id="added">✓ Added to your bag — taking you to checkout…</p>
     </div>
-  </div>
+  </section>
 
 <script>
+  /* ========= palette ========= */
   const SWATCHES = { Yellow:'#FAD24A', Purple:'#A77BD8', Green:'#7FC889', Orange:'#F4813C', Blue:'#5EB7DA', Pink:'#F08CB0' };
-  const CADDY_COLORS = ['Yellow','Purple','Green','Orange','Blue','Pink'];
-  const HANDLE_COLORS = ['Yellow','Blue','Pink','Purple','Green','Orange'];
-  const BASE = 25, NAME_PRICE = 32;
-  const state = { caddy:'Orange', handle:'Yellow', name:'' };
+  const ALL = ['Yellow','Purple','Green','Orange','Blue','Pink'];
 
+  /* ========= products (data-driven) ========= */
+  const PRODUCTS = [
+    { id:'orangecaddy', name:'Round Caddy', cat:'Caddy', photo:'photos/caddy.jpg',
+      blurb:'A round caddy with a sturdy handle and divided sections — for crayons, markers and supplies.',
+      base:25, namePrice:32, hasName:true,
+      layers:[ {key:'body',label:'Caddy color',colors:ALL,def:'Orange'},
+               {key:'handle',label:'Handle color',colors:ALL,def:'Yellow'} ],
+      svg:roundCaddySVG },
+
+    { id:'purplecaddy', name:'Ribbed Caddy', cat:'Caddy', photo:'photos/purplecaddy.jpg',
+      blurb:'A ribbed, oval caddy with a sturdy handle — roomy enough for the whole kit.',
+      base:28, hasName:false,
+      layers:[ {key:'body',label:'Caddy color',colors:ALL,def:'Purple'},
+               {key:'handle',label:'Handle color',colors:ALL,def:'Pink'} ],
+      svg:ribbedCaddySVG },
+
+    { id:'doodlesmall', name:'Doodle Dish — Small', cat:'Tray (set of 2)', photo:'photos/doodledish.jpg',
+      blurb:'A set of two wavy trays with a net design — great for beads, clips and tiny treasures.',
+      base:18, hasName:false,
+      layers:[ {key:'col1',label:'Color 1',colors:ALL,def:'Blue'},
+               {key:'col2',label:'Color 2',colors:ALL,def:'Pink'} ],
+      svg:doodleSmallSVG },
+
+    { id:'doodlelarge', name:'Doodle Dish — Large', cat:'Catch-all tray', photo:'photos/doodledish.jpg',
+      blurb:'A larger wavy catch-all tray for doodling supplies and odds and ends. Add a name to make it theirs.',
+      base:13, namePrice:18, hasName:true,
+      layers:[ {key:'body',label:'Tray color',colors:ALL,def:'Green'} ],
+      svg:doodleLargeSVG },
+
+    { id:'flowerholder', name:'Flower Pencil Holder', cat:'Organizer', photo:'photos/bloomstack.jpg',
+      blurb:'A flower-shaped pencil holder with petal compartments. Choose your holder and bloom colors.',
+      hasName:false,
+      sets:[{label:'Set of 2',price:28},{label:'Set of 3',price:32}],
+      layers:[ {key:'body',label:'Holder color',colors:ALL,def:'Blue'},
+               {key:'flower',label:'Bloom color',colors:ALL,def:'Pink'} ],
+      svg:flowerSVG },
+  ];
+
+  /* ========= helpers ========= */
   function money(n){ return '$' + n.toFixed(2); }
+  function esc(s){ return String(s).replace(/[<&>]/g, m=>({'<':'&lt;','&':'&amp;','>':'&gt;'}[m])); }
   function shade(hex, amt){
     const n = parseInt(hex.slice(1),16); let r=(n>>16)+amt, g=((n>>8)&255)+amt, b=(n&255)+amt;
     r=Math.max(0,Math.min(255,r)); g=Math.max(0,Math.min(255,g)); b=Math.max(0,Math.min(255,b));
     return '#'+(r<<16|g<<8|b).toString(16).padStart(6,'0');
   }
-  function renderSwatches(elId, colors, key){
-    document.getElementById(elId).innerHTML = colors.map(c =>
-      `<button type="button" class="sw${state[key]===c?' active':''}" title="${c}" aria-label="${c}" style="background:${SWATCHES[c]}" onclick="pick('${key}','${c}')"></button>`
-    ).join('');
+  function readableOn(hex){ const n=parseInt(hex.slice(1),16); const L=0.299*(n>>16)+0.587*((n>>8)&255)+0.114*(n&255); return L>150?'#2B2530':'#ffffff'; }
+  function wavyPath(cx,cy,rx,ry,lobes,amp){
+    const N=120, pts=[];
+    for(let i=0;i<N;i++){ const a=(i/N)*Math.PI*2; const m=1+amp*Math.sin(a*lobes);
+      pts.push((cx+Math.cos(a)*rx*m).toFixed(1)+' '+(cy+Math.sin(a)*ry*m).toFixed(1)); }
+    return 'M'+pts.join(' L')+' Z';
   }
-  function pick(key, c){
-    state[key] = c;
-    renderSwatches(key==='caddy'?'caddyColors':'handleColors', key==='caddy'?CADDY_COLORS:HANDLE_COLORS, key);
-    paint();
+  const DEFS = `<defs>
+    <linearGradient id="cyl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".34" stop-color="#fff" stop-opacity="0"/>
+      <stop offset=".8" stop-color="#000" stop-opacity=".10"/><stop offset="1" stop-color="#000" stop-opacity=".30"/></linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="1" y2="0">
+      <stop offset=".06" stop-color="#fff" stop-opacity="0"/><stop offset=".16" stop-color="#fff" stop-opacity=".55"/>
+      <stop offset=".27" stop-color="#fff" stop-opacity="0"/><stop offset=".82" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".14"/></linearGradient>
+    <linearGradient id="hg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".18"/></linearGradient>
+    <radialGradient id="ish" cx="50%" cy="38%" r="62%">
+      <stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient>
+    <radialGradient id="floor" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#000" stop-opacity=".18"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+  </defs>`;
+  function svgWrap(inner){ return `<svg viewBox="0 0 400 450" xmlns="http://www.w3.org/2000/svg" aria-label="Live preview">${DEFS}${inner}</svg>`; }
+  function nameTextSVG(s,x,y,fill,size){ return s.name ? `<text x="${x}" y="${y}" text-anchor="middle" font-family="Pacifico, cursive" font-size="${size}" fill="${fill}">${esc(s.name)}</text>` : ''; }
+
+  /* ========= product art ========= */
+  function roundCaddySVG(s){
+    const cc=SWATCHES[s.body], hc=SWATCHES[s.handle];
+    return svgWrap(`
+      <clipPath id="bc"><path d="M108 208 L108 332 Q108 380 200 380 Q292 380 292 332 L292 208 Z"/></clipPath>
+      <ellipse cx="204" cy="404" rx="124" ry="22" fill="url(#floor)"/>
+      <path d="M134 214 C134 86 266 86 266 214" fill="none" stroke="${hc}" stroke-width="25" stroke-linecap="round"/>
+      <path d="M134 214 C134 86 266 86 266 214" fill="none" stroke="url(#hg)" stroke-width="25" stroke-linecap="round"/>
+      <path d="M108 208 L108 332 Q108 380 200 380 Q292 380 292 332 L292 208 Z" fill="${cc}"/>
+      <g clip-path="url(#bc)"><rect x="108" y="200" width="184" height="190" fill="url(#cyl)"/><rect x="108" y="200" width="184" height="190" fill="url(#gloss)"/></g>
+      <ellipse cx="200" cy="208" rx="92" ry="30" fill="${shade(cc,22)}"/>
+      <ellipse cx="200" cy="206" rx="74" ry="22" fill="${shade(cc,-60)}"/>
+      <ellipse cx="200" cy="206" rx="74" ry="22" fill="url(#ish)"/>
+      <g stroke="#000" stroke-opacity=".22" stroke-width="5" stroke-linecap="round"><path d="M200 186 L200 226"/><path d="M130 206 L270 206"/></g>
+      <path d="M126 204 A92 30 0 0 1 200 180" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+      ${nameTextSVG(s,200,332,readableOn(cc),34)}`);
   }
-  function paint(){
-    const cc = SWATCHES[state.caddy], hc = SWATCHES[state.handle];
-    document.getElementById('caddyBody').setAttribute('fill', cc);
-    document.getElementById('caddyRim').setAttribute('fill', shade(cc, 22));
-    document.getElementById('caddyInner').setAttribute('fill', shade(cc, -60));
-    document.getElementById('handle').setAttribute('stroke', hc);
-    document.getElementById('caddyPick').innerHTML = '<b>'+state.caddy+'</b>';
-    document.getElementById('handlePick').innerHTML = '<b>'+state.handle+'</b>';
-    const t = document.getElementById('nameText');
-    t.setAttribute('fill', state.caddy==='Yellow' ? '#2B2530' : '#ffffff');
+  function ribbedCaddySVG(s){
+    const cc=SWATCHES[s.body], hc=SWATCHES[s.handle];
+    let ribs='';
+    for(let x=84;x<=316;x+=15){
+      ribs += `<path d="M${x} 200 L${x} 352" stroke="#000" stroke-opacity=".09" stroke-width="7" stroke-linecap="round"/>`;
+      ribs += `<path d="M${x+4} 200 L${x+4} 352" stroke="#fff" stroke-opacity=".16" stroke-width="3" stroke-linecap="round"/>`;
+    }
+    return svgWrap(`
+      <clipPath id="bc2"><path d="M70 196 L70 324 Q70 366 200 366 Q330 366 330 324 L330 196 Z"/></clipPath>
+      <ellipse cx="206" cy="400" rx="150" ry="24" fill="url(#floor)"/>
+      <path d="M104 200 C104 92 296 92 296 200" fill="none" stroke="${hc}" stroke-width="24" stroke-linecap="round"/>
+      <path d="M104 200 C104 92 296 92 296 200" fill="none" stroke="url(#hg)" stroke-width="24" stroke-linecap="round"/>
+      <path d="M70 196 L70 324 Q70 366 200 366 Q330 366 330 324 L330 196 Z" fill="${cc}"/>
+      <g clip-path="url(#bc2)">${ribs}<rect x="70" y="190" width="260" height="200" fill="url(#cyl)"/><rect x="70" y="190" width="260" height="200" fill="url(#gloss)"/></g>
+      <ellipse cx="200" cy="196" rx="130" ry="34" fill="${shade(cc,22)}"/>
+      <ellipse cx="200" cy="194" rx="112" ry="26" fill="${shade(cc,-60)}"/>
+      <ellipse cx="200" cy="194" rx="112" ry="26" fill="url(#ish)"/>
+      <path d="M88 190 A130 34 0 0 1 200 160" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>`);
+  }
+  function drawTray(cx,cy,rx,ry,colorName,idx,nameStr){
+    const c=SWATCHES[colorName]||colorName;
+    const outer=wavyPath(cx,cy,rx,ry,9,0.07);
+    const inner=wavyPath(cx,cy-3,rx*0.72,ry*0.72,9,0.07);
+    const wall=wavyPath(cx,cy+15,rx,ry,9,0.07);
+    let net='';
+    for(let i=-Math.round(rx);i<=rx;i+=11){
+      net+=`<path d="M${(cx+i).toFixed(1)} ${cy-ry} L${(cx+i).toFixed(1)} ${cy+ry}" stroke="${shade(c,-45)}" stroke-opacity=".45" stroke-width="2"/>`;
+    }
+    for(let j=-Math.round(ry);j<=ry;j+=11){
+      net+=`<path d="M${cx-rx} ${(cy+j).toFixed(1)} L${cx+rx} ${(cy+j).toFixed(1)}" stroke="${shade(c,-45)}" stroke-opacity=".45" stroke-width="2"/>`;
+    }
+    const nm = nameStr ? `<text x="${cx}" y="${(cy+ry*0.16).toFixed(1)}" text-anchor="middle" font-family="Pacifico, cursive" font-size="30" fill="${readableOn(c)}">${esc(nameStr)}</text>` : '';
+    return `
+      <path d="${wall}" fill="${shade(c,-50)}"/>
+      <path d="${outer}" fill="${c}"/>
+      <clipPath id="net${idx}"><path d="${inner}"/></clipPath>
+      <path d="${inner}" fill="${shade(c,-24)}"/>
+      <g clip-path="url(#net${idx})">${net}</g>
+      <path d="${inner}" fill="none" stroke="${shade(c,-42)}" stroke-width="3"/>
+      ${nm}`;
+  }
+  function doodleSmallSVG(s){
+    return svgWrap(`
+      <ellipse cx="206" cy="392" rx="152" ry="22" fill="url(#floor)"/>
+      ${drawTray(252,196,94,68,s.col2,'b','')}
+      ${drawTray(158,268,104,76,s.col1,'a','')}`);
+  }
+  function doodleLargeSVG(s){
+    return svgWrap(`
+      <ellipse cx="204" cy="392" rx="150" ry="22" fill="url(#floor)"/>
+      ${drawTray(200,234,140,104,s.body,'L',s.name)}`);
+  }
+  function flowerSVG(s){
+    const pc=SWATCHES[s.body], fc=SWATCHES[s.flower];
+    const cx=200, cy=230, R=72, pr=44;
+    let back='', top='';
+    for(let i=0;i<6;i++){ const a=(i/6)*Math.PI*2 - Math.PI/2;
+      const x=cx+Math.cos(a)*R, y=cy+Math.sin(a)*R*0.6;
+      back += `<ellipse cx="${x.toFixed(1)}" cy="${(y+20).toFixed(1)}" rx="${pr}" ry="${(pr*0.92).toFixed(1)}" fill="${shade(pc,-55)}"/>`;
+    }
+    for(let i=0;i<6;i++){ const a=(i/6)*Math.PI*2 - Math.PI/2;
+      const x=cx+Math.cos(a)*R, y=cy+Math.sin(a)*R*0.6;
+      top += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${pr}" ry="${(pr*0.92).toFixed(1)}" fill="${pc}"/>`;
+      top += `<ellipse cx="${x.toFixed(1)}" cy="${(y-1).toFixed(1)}" rx="${(pr*0.62).toFixed(1)}" ry="${(pr*0.56).toFixed(1)}" fill="${shade(pc,-52)}"/>`;
+      top += `<ellipse cx="${(x-pr*0.3).toFixed(1)}" cy="${(y-pr*0.42).toFixed(1)}" rx="10" ry="6" fill="#fff" fill-opacity=".32"/>`;
+    }
+    const center = `
+      <ellipse cx="${cx}" cy="${cy+18}" rx="58" ry="52" fill="${shade(fc,-55)}"/>
+      <ellipse cx="${cx}" cy="${cy}" rx="58" ry="52" fill="${fc}"/>
+      <ellipse cx="${cx}" cy="${cy-2}" rx="34" ry="30" fill="${shade(fc,-48)}"/>
+      <ellipse cx="${cx-16}" cy="${cy-22}" rx="12" ry="8" fill="#fff" fill-opacity=".4"/>`;
+    return svgWrap(`
+      <ellipse cx="204" cy="392" rx="140" ry="24" fill="url(#floor)"/>
+      ${back}${top}${center}`);
+  }
+
+  /* ========= state + flow ========= */
+  let currentProduct = null;
+  let state = {};
+
+  function resetState(p){ state = {}; p.layers.forEach(L=> state[L.key]=L.def); state.name=''; state.setIndex=0; }
+  function currentPrice(){ const p=currentProduct; let price = p.sets ? p.sets[state.setIndex].price : p.base; if(p.hasName && state.name && p.namePrice) price=p.namePrice; return price; }
+  function updatePrice(){ document.getElementById('price').textContent = money(currentPrice()); }
+  function renderArt(){ document.getElementById('tilt').innerHTML = currentProduct.svg(state); }
+
+  function renderPicker(){
+    document.getElementById('pgrid').innerHTML = PRODUCTS.map(p=>`
+      <button class="pcard" onclick="selectProduct('${p.id}')">
+        <div class="pimg"><img src="${p.photo}" alt="${p.name}" loading="lazy"></div>
+        <div class="pbody">
+          <span class="pcat">${p.cat}</span>
+          <h3>${p.name}</h3>
+          <p>${p.blurb}</p>
+          <span class="pfrom"><span class="from">Design from $${p.sets?p.sets[0].price:p.base}</span><span class="go">Customize →</span></span>
+        </div>
+      </button>`).join('');
+  }
+
+  function stepHTML(num,title,body,pickHtml){
+    return `<div class="step"><div class="lbl"><span class="num">${num}</span><h3>${title}</h3>${pickHtml||''}</div>${body}</div>`;
+  }
+  function buildSteps(p){
+    let n=1, html='';
+    p.layers.forEach(L=>{
+      html += stepHTML(n++, L.label, `<div class="swatches" id="sw-${L.key}"></div>`, `<span class="pick" id="pick-${L.key}"><b>${state[L.key]}</b></span>`);
+    });
+    if(p.sets){
+      const body = `<div class="sets" id="sets">${p.sets.map((st,i)=>`<button type="button" class="setbtn${i===state.setIndex?' active':''}" onclick="pickSet(${i})">${st.label} · $${st.price}</button>`).join('')}</div>`;
+      html += stepHTML(n++, 'Set size', body, '');
+    }
+    if(p.hasName){
+      const sur = p.namePrice ? ` · +$${p.namePrice-p.base}` : '';
+      const body = `<div class="namewrap"><input id="nameInput" type="text" maxlength="14" placeholder="e.g. Irha" oninput="onName()" value="${esc(state.name||'')}" /></div><p class="hint">Printed on the front — watch it appear above as you type ✨</p>`;
+      html += stepHTML(n++, 'Add a name', body, `<span class="pick">Optional${sur}</span>`);
+    }
+    document.getElementById('steps').innerHTML = html;
+    p.layers.forEach(renderSwatchRow);
+  }
+  function renderSwatchRow(L){
+    const el=document.getElementById('sw-'+L.key); if(!el) return;
+    el.innerHTML = L.colors.map(c=>`<button type="button" class="sw${state[L.key]===c?' active':''}" title="${c}" aria-label="${c}" style="background:${SWATCHES[c]}" onclick="pickColor('${L.key}','${c}')"></button>`).join('');
+    const pk=document.getElementById('pick-'+L.key); if(pk) pk.innerHTML='<b>'+state[L.key]+'</b>';
+  }
+  function pickColor(key,c){ state[key]=c; const L=currentProduct.layers.find(x=>x.key===key); renderSwatchRow(L); renderArt(); }
+  function pickSet(i){
+    state.setIndex=i;
+    document.querySelectorAll('#sets .setbtn').forEach((b,idx)=>b.classList.toggle('active', idx===i));
     updatePrice();
   }
-  function onName(){
-    state.name = document.getElementById('nameInput').value.trim();
-    const t = document.getElementById('nameText');
-    t.textContent = state.name; t.style.opacity = state.name ? 1 : 0;
-    updatePrice();
+  function onName(){ state.name=document.getElementById('nameInput').value.trim(); renderArt(); updatePrice(); }
+
+  function selectProduct(id){
+    const p = PRODUCTS.find(x=>x.id===id); if(!p) return;
+    currentProduct = p; resetState(p);
+    document.getElementById('bTitle').textContent = 'Design your ' + p.name.replace(/ —.*$/,'');
+    document.getElementById('added').style.display='none';
+    buildSteps(p); renderArt(); updatePrice();
+    document.getElementById('picker').style.display='none';
+    document.getElementById('customizer').style.display='grid';
+    window.scrollTo({top:0});
   }
-  function updatePrice(){ document.getElementById('price').textContent = money(state.name ? NAME_PRICE : BASE); }
+  function showPicker(){
+    document.getElementById('customizer').style.display='none';
+    document.getElementById('picker').style.display='block';
+    window.scrollTo({top:0});
+  }
 
   function addToBag(){
-    const price = state.name ? NAME_PRICE : BASE;
-    const item = { id:'orangecaddy', name:`Custom Caddy (Caddy: ${state.caddy} · Handle: ${state.handle})`, price, img:'photos/caddy.jpg', qty:1, personalName: state.name || '' };
-    try{ const K='littlelayers.cart'; const c=JSON.parse(localStorage.getItem(K))||[]; (Array.isArray(c)?c:[]).push(item); localStorage.setItem(K, JSON.stringify(Array.isArray(c)?c:[item])); }catch(e){}
+    const p=currentProduct, price=currentPrice();
+    const parts = p.layers.map(L=> `${L.label.replace(/ colou?r$/i,'')}: ${state[L.key]}`);
+    if(p.sets) parts.unshift(p.sets[state.setIndex].label);
+    const composed = `Custom ${p.name} (${parts.join(' · ')})`;
+    const item = { id:p.id, name:composed, price, img:p.photo, qty:1, personalName: (p.hasName&&state.name)?state.name:'' };
+    try{
+      const K='littlelayers.cart';
+      let c = JSON.parse(localStorage.getItem(K)); if(!Array.isArray(c)) c=[];
+      c.push(item); localStorage.setItem(K, JSON.stringify(c));
+    }catch(e){}
     document.getElementById('added').style.display='block';
     setTimeout(()=>{ window.location = '/?cart=1'; }, 700);
   }
 
-  /* subtle 3D tilt */
+  /* subtle 3D tilt (shared across all products) */
   (function(){
     const stage=document.getElementById('stage'), tilt=document.getElementById('tilt');
     if(window.matchMedia('(hover: hover)').matches){
@@ -254,10 +409,12 @@
     } else { tilt.classList.add('sway'); }
   })();
 
-  document.getElementById('items').innerHTML = `<button type="button" class="sw active" title="Round Caddy" style="background:#F4813C"></button>`;
-  renderSwatches('caddyColors', CADDY_COLORS, 'caddy');
-  renderSwatches('handleColors', HANDLE_COLORS, 'handle');
-  paint();
+  /* init — picker by default; ?item=ID jumps straight into a product */
+  renderPicker();
+  {
+    const id = new URLSearchParams(location.search).get('item');
+    if(id && PRODUCTS.some(p=>p.id===id)) selectProduct(id);
+  }
 </script>
 </body>
 </html>

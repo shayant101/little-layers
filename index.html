@@ -133,6 +133,8 @@
   .sw-btn:hover{transform:scale(1.12)}
   .sw-btn.active{box-shadow:0 0 0 2px var(--ink)}
   .card .add{margin-top:16px;width:100%;justify-content:center}
+  .card .build-link{display:inline-flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;font-size:13.5px;font-weight:600;color:var(--rose-deep)}
+  .card .build-link:hover{text-decoration:underline}
 
   .about{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
   .about .wrap{display:grid;grid-template-columns:.9fr 1.1fr;gap:48px;align-items:center}
@@ -432,6 +434,7 @@ function renderShop(){
         ${selectsHtml}${setsHtml}${persoHtml}
         <div class="priced"><span class="price" id="price-${p.id}">${money(base)}</span><small>+ shipping</small></div>
         <button class="btn btn-primary add" onclick="addToCart('${p.id}')">Add to bag</button>
+        <a class="build-link" href="/build?item=${p.id}">Build your own ✨</a>
       </div>
     </div>`; }).join('');
 }
