@@ -83,6 +83,9 @@
     background:rgba(255,255,255,.74);backdrop-filter:blur(6px);padding:7px 15px;border-radius:999px;box-shadow:var(--shadow-sm)}
   .hint .icn{width:15px;height:15px;stroke:var(--rose)}
   .eyebrow-pill{background:rgba(255,255,255,.7);backdrop-filter:blur(4px);padding:7px 15px;border-radius:999px;box-shadow:var(--shadow-sm)}
+  /* mobile-only product row (hidden on desktop where the floats handle it) */
+  .hero-mobile{display:none;gap:14px;margin-top:30px;justify-content:center;align-items:flex-end;flex-wrap:wrap}
+  .hero-mobile img{width:74px;height:auto;display:block;filter:drop-shadow(0 9px 13px rgba(80,40,70,.20))}
 
   /* feature band */
   .features{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff}
@@ -192,6 +195,19 @@
     .stage{height:78vh;min-height:560px}
   }
   @media(max-width:560px){.grid{grid-template-columns:1fr}.features .wrap{grid-template-columns:1fr}}
+  /* ===== MOBILE: stack the hero, drop the scattered floats ===== */
+  @media(max-width:640px){
+    .stage{height:auto;min-height:0;max-height:none;padding:46px 0 30px;touch-action:auto}
+    .float{display:none}
+    .hint{display:none}
+    .hero-content{position:static;inset:auto;min-height:0;padding:0 20px}
+    .hero-content h1{font-size:clamp(30px,8.5vw,38px);line-height:1.07;max-width:none;margin-top:14px}
+    .hero-content .sub{font-size:15.5px;margin:14px 0 22px;max-width:none}
+    .hero-cta{width:100%}
+    .hero-mobile{display:flex}
+    section{padding:52px 0}
+    .sec-head{margin-bottom:30px}
+  }
   @media(prefers-reduced-motion:reduce){.float{transition:none}}
 </style>
 </head>
@@ -238,6 +254,12 @@
         <a href="#about" class="btn btn-outline">Our story</a>
       </div>
       <span class="hint"><svg class="icn" viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><path d="M2 12h20"/><path d="M12 2v20"/></svg>Move close — the pieces scatter. Catch one to peek</span>
+      <div class="hero-mobile" aria-hidden="true">
+        <img src="photos/cut_caddy.png" alt="Personalized caddy" loading="lazy" />
+        <img src="photos/cut_bloomstack.png" alt="BloomStack organizer" loading="lazy" />
+        <img src="photos/cut_doodledish.png" alt="Doodle Dish" loading="lazy" />
+        <img src="photos/cut_purplecaddy.png" alt="Purple caddy" loading="lazy" />
+      </div>
     </div>
   </div>
 </section>
