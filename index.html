@@ -67,6 +67,11 @@
     filter:drop-shadow(0 14px 18px rgba(80,40,70,.20));transition:filter .2s}
   .float:active{cursor:grabbing}
   .float img{width:100%;height:auto;display:block;pointer-events:none;-webkit-user-drag:none}
+  .catch-label{position:absolute;z-index:30;background:var(--ink);color:#fff;font-family:'Poppins';font-weight:600;font-size:13px;
+    padding:6px 12px;border-radius:999px;white-space:nowrap;pointer-events:none;opacity:0;
+    transform:translate(-50%,-100%) scale(.85);transition:opacity .18s,transform .18s;box-shadow:var(--shadow-sm)}
+  .catch-label::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--ink)}
+  .catch-label.show{opacity:1;transform:translate(-50%,-100%) scale(1)}
   .hero-content{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;
     text-align:center;z-index:6;padding:0 22px;pointer-events:none}
   .hero-content>*{pointer-events:auto}
@@ -231,7 +236,7 @@
         <a href="#shop" class="btn btn-primary">Shop the collection</a>
         <a href="#about" class="btn btn-outline">Our story</a>
       </div>
-      <span class="hint"><svg class="icn" viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><path d="M2 12h20"/><path d="M12 2v20"/></svg>Grab the pieces and toss them around</span>
+      <span class="hint"><svg class="icn" viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><path d="M2 12h20"/><path d="M12 2v20"/></svg>Move close — the pieces scatter. Catch one to peek</span>
     </div>
   </div>
 </section>
@@ -545,32 +550,62 @@ async function checkout(){
   // per-float runtime state
   const st = floats.map((f,i)=>({
     el:f, depth:parseFloat(f.dataset.depth)||1,
+    x:parseFloat(f.dataset.x)||50, y:parseFloat(f.dataset.y)||50,
     phase: Math.random()*Math.PI*2, spd:0.6+Math.random()*0.5, amp:7+Math.random()*7,
     rphase: Math.random()*Math.PI*2, rspd:0.4+Math.random()*0.4, ramp:3+Math.random()*4,
-    dragX:0, dragY:0, tgtX:0, tgtY:0, dragging:false, k:0.08
+    dragX:0, dragY:0, tgtX:0, tgtY:0, dragging:false, k:0.08,
+    repX:0, repY:0, pop:0
   }));
 
-  // pointer parallax (desktop)
+  // shared "catch" label bubble (shows a product's name when you grab it)
+  const label = document.createElement('div');
+  label.className = 'catch-label';
+  stage.appendChild(label);
+  let labelTimer = null;
+  function reveal(s){
+    const img = s.el.querySelector('img');
+    label.textContent = (img && img.alt) || 'Little Layers';
+    const lx = (s.x/100)*stageRect.width + s.dragX + s.repX;
+    const ly = (s.y/100)*stageRect.height + s.dragY + s.repY - (s.el.offsetHeight/2) - 8;
+    label.style.left = lx + 'px';
+    label.style.top  = ly + 'px';
+    label.classList.add('show');
+    s.pop = 1;
+    clearTimeout(labelTimer);
+    labelTimer = setTimeout(()=>label.classList.remove('show'), 1500);
+  }
+
+  // absolute cursor position (for the run-away repulsion)
+  let curX = -9999, curY = -9999, curOn = false;
+
+  // pointer parallax (desktop) + cursor tracking
   window.addEventListener('pointermove', e=>{
     if(e.pointerType==='mouse'){
       mouseX = ((e.clientX - stageRect.left)/stageRect.width - .5)*2;
       mouseY = ((e.clientY - stageRect.top)/stageRect.height - .5)*2;
+      curX = e.clientX; curY = e.clientY; curOn = true;
     }
   }, {passive:true});
+  stage.addEventListener('pointerleave', ()=>{ curOn = false; });
 
-  // drag-and-toss
+  // drag-and-toss + tap-to-catch
   st.forEach(s=>{
-    let id=null, sx=0, sy=0, ox=0, oy=0;
+    let id=null, sx=0, sy=0, ox=0, oy=0, moved=false;
     s.el.addEventListener('pointerdown', e=>{
       id=e.pointerId; s.dragging=true; s.k=0.3; s.el.setPointerCapture(id);
-      sx=e.clientX; sy=e.clientY; ox=s.dragX; oy=s.dragY; s.el.style.cursor='grabbing';
+      sx=e.clientX; sy=e.clientY; ox=s.dragX; oy=s.dragY; moved=false; s.el.style.cursor='grabbing';
     });
     s.el.addEventListener('pointermove', e=>{
       if(!s.dragging||e.pointerId!==id) return;
+      if(Math.hypot(e.clientX-sx, e.clientY-sy) > 6) moved=true;
       s.tgtX = ox + (e.clientX - sx);
       s.tgtY = oy + (e.clientY - sy);
     });
-    const end=e=>{ if(e.pointerId!==id) return; s.dragging=false; s.k=0.05; s.tgtX=0; s.tgtY=0; s.el.style.cursor='grab'; };
+    const end=e=>{
+      if(e.pointerId!==id) return;
+      s.dragging=false; s.k=0.05; s.tgtX=0; s.tgtY=0; s.el.style.cursor='grab';
+      if(!moved) reveal(s);   // a quick tap = "catch" → show the piece's name
+    };
     s.el.addEventListener('pointerup', end);
     s.el.addEventListener('pointercancel', end);
   });
@@ -578,22 +613,43 @@ async function checkout(){
   window.addEventListener('resize', measure);
   let t0 = performance.now();
   let running = true;
+  const REP_R = 165;      // cursor influence radius (px)
+  const REP_MAX = 95;     // max push distance (px)
   function frame(now){
     if(!running) return;
     const t = (now - t0)/1000;
     const scrollAmt = window.scrollY || 0;
+    stageRect = stage.getBoundingClientRect();   // keep fresh so repulsion tracks while scrolling
     for(const s of st){
       // ease drag toward target
       s.dragX += (s.tgtX - s.dragX)*s.k;
       s.dragY += (s.tgtY - s.dragY)*s.k;
+      // run-away: push away from the cursor, spring back when it leaves
+      let rtx = 0, rty = 0;
+      if(curOn && !s.dragging && !reduce){
+        const ax = stageRect.left + (s.x/100)*stageRect.width;
+        const ay = stageRect.top  + (s.y/100)*stageRect.height;
+        let dx = ax - curX, dy = ay - curY;
+        let d = Math.hypot(dx,dy);
+        if(d < REP_R){
+          if(d < 0.001){ dx = Math.random()-.5; dy = Math.random()-.5; d = 0.5; }
+          const force = 1 - d/REP_R;
+          const push = force*force*REP_MAX;   // ease-in so it dodges harder up close
+          rtx = (dx/d)*push; rty = (dy/d)*push;
+        }
+      }
+      s.repX += (rtx - s.repX)*0.14;
+      s.repY += (rty - s.repY)*0.14;
+      s.pop *= 0.86;   // catch bounce decay
       const bobY = reduce?0:Math.sin(t*s.spd + s.phase)*s.amp;
       const rot  = reduce?0:Math.sin(t*s.rspd + s.rphase)*s.ramp;
-      const parX = reduce?0:(-mouseX * s.depth * 22);
-      const parY = reduce?0:(-mouseY * s.depth * 16);
+      const parX = reduce?0:(-mouseX * s.depth * 14);
+      const parY = reduce?0:(-mouseY * s.depth * 10);
       const scr  = Math.min(scrollAmt,800) * s.depth * 0.12; // drift down on scroll
-      const tx = parX + s.dragX;
-      const ty = bobY + parY + s.dragY + scr;
-      s.el.style.transform = `translate(-50%,-50%) translate3d(${tx.toFixed(2)}px,${ty.toFixed(2)}px,0) rotate(${rot.toFixed(2)}deg)`;
+      const tx = parX + s.dragX + s.repX;
+      const ty = bobY + parY + s.dragY + scr + s.repY;
+      const sc = 1 + s.pop*0.14;
+      s.el.style.transform = `translate(-50%,-50%) translate3d(${tx.toFixed(2)}px,${ty.toFixed(2)}px,0) rotate(${rot.toFixed(2)}deg) scale(${sc.toFixed(3)})`;
     }
     requestAnimationFrame(frame);
   }
