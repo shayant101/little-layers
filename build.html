@@ -181,6 +181,13 @@
       layers:[ {key:'body',label:'Holder color',colors:ALL,def:'Blue'},
                {key:'flower',label:'Bloom color',colors:ALL,def:'Pink'} ],
       svg:flowerSVG },
+
+    { id:'drawella', name:'Drawella', cat:'Vanity organizer', photo:'photos/vanitydrawers.jpg',
+      blurb:'A stackable two-drawer organizer with an open top tray — choose a colour for each drawer.',
+      base:32, hasName:false,
+      layers:[ {key:'top',label:'Top drawer color',colors:ALL,def:'Purple'},
+               {key:'bottom',label:'Bottom drawer color',colors:ALL,def:'Blue'} ],
+      svg:drawellaSVG },
   ];
 
   /* ========= helpers ========= */
@@ -318,6 +325,35 @@
       <clipPath id="flClip">${clip}</clipPath>
       <g clip-path="url(#flClip)">${ribs}</g>
       ${tops}`);
+  }
+  function drawellaSVG(s){
+    const tc=SWATCHES[s.top], bc=SWATCHES[s.bottom];
+    const x0=64, x1=336, ribX0=x0+10, ribX1=x0+92;
+    const rib=(yA,yB)=>{ let r=''; for(let x=ribX0;x<=ribX1;x+=8){
+        r+=`<path d="M${x} ${yA} L${x} ${yB}" stroke="#000" stroke-opacity=".11" stroke-width="4" stroke-linecap="round"/>`;
+        r+=`<path d="M${x+2} ${yA} L${x+2} ${yB}" stroke="#fff" stroke-opacity=".16" stroke-width="2" stroke-linecap="round"/>`; } return r; };
+    const pull=(cyy,col)=>{ const px=(ribX1+x1)/2+6;
+      return `<path d="M${px-28} ${cyy} A28 22 0 0 0 ${px+28} ${cyy} Z" fill="${shade(col,-52)}"/>`; };
+    return svgWrap(`
+      <ellipse cx="204" cy="404" rx="150" ry="22" fill="url(#floor)"/>
+      <!-- open top tray -->
+      <path d="M64 150 Q64 130 86 130 L314 130 Q336 130 336 150 L336 200 L64 200 Z" fill="#F5F1EB"/>
+      <ellipse cx="200" cy="150" rx="136" ry="21" fill="#EAE3D9"/>
+      <ellipse cx="200" cy="150" rx="122" ry="14" fill="#D3C9BB"/>
+      <g stroke="#B7AC9C" stroke-width="4" stroke-linecap="round" opacity=".8"><path d="M150 138 L150 163"/><path d="M250 138 L250 163"/></g>
+      <path d="M74 146 A130 20 0 0 1 200 130" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="2"/>
+      <!-- top drawer -->
+      <rect x="64" y="200" width="272" height="94" fill="${tc}"/>
+      <clipPath id="drT"><rect x="64" y="200" width="272" height="94"/></clipPath>
+      <g clip-path="url(#drT)"><rect x="64" y="200" width="272" height="94" fill="url(#cyl)"/>${rib(210,286)}</g>
+      <path d="M156 202 L156 292" stroke="${shade(tc,-38)}" stroke-width="2" opacity=".7"/>
+      ${pull(224,tc)}
+      <!-- bottom drawer -->
+      <path d="M64 294 L336 294 L336 362 Q336 386 312 386 L88 386 Q64 386 64 362 Z" fill="${bc}"/>
+      <clipPath id="drB"><path d="M64 294 L336 294 L336 362 Q336 386 312 386 L88 386 Q64 386 64 362 Z"/></clipPath>
+      <g clip-path="url(#drB)"><rect x="64" y="294" width="272" height="92" fill="url(#cyl)"/>${rib(302,376)}</g>
+      <path d="M156 296 L156 386" stroke="${shade(bc,-38)}" stroke-width="2" opacity=".7"/>
+      ${pull(320,bc)}`);
   }
 
   /* ========= state + flow ========= */
