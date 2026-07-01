@@ -354,6 +354,7 @@
 const CADDY_COLORS = ['Yellow','Purple','Green','Orange','Blue','Pink'];
 const HANDLE_COLORS = ['Yellow','Blue','Pink','Purple','Green','Orange'];
 const DISH_COLORS = ['Yellow','Purple','Green','Orange','Blue','Pink'];
+const DRAWER_COLORS = ['Yellow','Purple','Green','Orange','Blue','Pink'];
 const FLOWER_STYLES = ['Blue holder + pink flower','Blue holder + yellow flower','Blue holder + yellow & pink flower'];
 // Representative shades for the color options (shown as swatches)
 const SWATCHES = { Yellow:'#FAD24A', Purple:'#A77BD8', Green:'#7FC889', Orange:'#F4813C', Blue:'#5EB7DA', Pink:'#F08CB0' };
@@ -384,6 +385,11 @@ const PRODUCTS = [
     personalize:false,
     selects:[{key:'style',label:'Flower style',choices:FLOWER_STYLES}],
     sets:[{label:'Set of 2',price:28},{label:'Set of 3',price:32}] },
+
+  { id:'drawella', name:'Drawella', cat:'Vanity organizer', img:'photos/vanitydrawers.jpg', tag:'New',
+    desc:'A stackable two-drawer organizer with an open top tray — perfect for a desk or vanity. Choose a color for each drawer.',
+    price:32, personalize:false,
+    selects:[{key:'top',label:'Top drawer color',choices:DRAWER_COLORS},{key:'bottom',label:'Bottom drawer color',choices:DRAWER_COLORS}] },
 ];
 
 const CART_KEY = 'littlelayers.cart';
