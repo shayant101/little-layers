@@ -36,6 +36,18 @@
   flow before switching to the live `sk_live_…` key.
 - Secret key goes in **Vercel env vars only** — never committed to the repo or pasted in chat.
 
+## New product added (from Dropbox `/Little Layers` pricing doc)
+- **Drawella** — stackable two-drawer set, **$32**, no personalization — added to the
+  `PRODUCTS` list in `index.html`. It was the only doc item with no counterpart on the site.
+- **Image = TEMPORARY:** using the existing `photos/vanitydrawers.jpg`. The intended new
+  photo is one of the Jun-25 PNGs in the Dropbox `/Little Layers` folder, but this
+  environment's **network policy blocks `*.dropboxusercontent.com`**, so it can't be
+  pulled here. To swap: attach the real photo in Claude Code, OR have Cowork commit it to
+  `/photos`, OR widen the env network policy to allow Dropbox and re-pull. Then point
+  `img:` for `drawella` at the new file.
+- Other doc items (Orange caddy, Doodle Dish Large, Flower pencil Holder) use with/without-name
+  or set-of-2/3 pricing that the current single-price format doesn't model — deferred.
+
 ## Open / next steps
 - [ ] Stripe → Test mode → reveal `sk_test_…` secret key.
 - [ ] Vercel → little-layers → Settings → Environment Variables → add
