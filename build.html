@@ -64,6 +64,10 @@
   .tilt.sway{animation:sway 6s ease-in-out infinite}
   @keyframes sway{0%,100%{transform:rotateY(-6deg)}50%{transform:rotateY(6deg)}}
   .stage svg{width:100%;max-width:430px;height:auto;display:block}
+  /* 3D preview mode: canvas fills the stage, SVG fallback hidden */
+  .stage.gl .tilt{display:none}
+  .stage.gl canvas{border-radius:18px;cursor:grab}
+  .stage.gl canvas:active{cursor:grabbing}
 
   .changelink{font-size:13.5px;color:var(--muted);font-weight:600;display:inline-flex;align-items:center;gap:6px;margin-bottom:6px;cursor:pointer;background:none;border:none;font-family:inherit;padding:0}
   .changelink:hover{color:var(--ink)}
@@ -96,10 +100,14 @@
   @media(max-width:880px){
     .wrap{grid-template-columns:1fr;gap:24px}
     .stage{position:relative;top:0;min-height:auto}
+    .stage.gl{min-height:min(92vw,420px)} /* canvas is absolutely positioned — keep the stage open */
     .pgrid{grid-template-columns:1fr 1fr}
   }
   @media(max-width:560px){.pgrid{grid-template-columns:1fr}}
 </style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}
+</script>
 </head>
 <body>
   <header>
@@ -129,7 +137,7 @@
       <div class="head">
         <span class="eyebrow">Build your own</span>
         <h1 id="bTitle">Design your piece</h1>
-        <p>Pick your colors, add a name, and watch it come to life. Move your cursor over it to see it turn. ✨</p>
+        <p id="stageHint">Pick your colors, add a name, and watch it come to life. Move your cursor over it to see it turn. ✨</p>
       </div>
       <div id="steps"></div>
       <div class="summary">
@@ -363,7 +371,21 @@
   function resetState(p){ state = {}; p.layers.forEach(L=> state[L.key]=L.def); state.name=''; state.setIndex=0; }
   function currentPrice(){ const p=currentProduct; let price = p.sets ? p.sets[state.setIndex].price : p.base; if(p.hasName && state.name && p.namePrice) price=p.namePrice; return price; }
   function updatePrice(){ document.getElementById('price').textContent = money(currentPrice()); }
-  function renderArt(){ document.getElementById('tilt').innerHTML = currentProduct.svg(state); }
+  /* Prefer the live 3D preview; fall back to the original SVG art if WebGL/module
+     loading is unavailable or a product has no 3D builder yet. */
+  function renderArt(){
+    const gl = window.LL3D && LL3D.ready && LL3D.has(currentProduct.id);
+    document.getElementById('stage').classList.toggle('gl', !!gl);
+    if(gl){
+      LL3D.show(currentProduct.id, state);
+      document.getElementById('stageHint').textContent = 'Pick your colors, add a name, and watch it come to life. Drag the preview to spin it around. ✨';
+    }else{
+      document.getElementById('tilt').innerHTML = currentProduct.svg(state);
+    }
+  }
+  window.addEventListener('ll3d-ready', ()=>{
+    if(LL3D.mount(document.getElementById('stage')) && currentProduct) renderArt();
+  });
 
   function renderPicker(){
     document.getElementById('pgrid').innerHTML = PRODUCTS.map(p=>`
@@ -442,11 +464,12 @@
     setTimeout(()=>{ window.location = '/?cart=1'; }, 700);
   }
 
-  /* subtle 3D tilt (shared across all products) */
+  /* subtle 3D tilt — only for the SVG fallback (the WebGL preview has real orbiting) */
   (function(){
     const stage=document.getElementById('stage'), tilt=document.getElementById('tilt');
     if(window.matchMedia('(hover: hover)').matches){
       stage.addEventListener('pointermove', e=>{
+        if(stage.classList.contains('gl')) return;
         const r=stage.getBoundingClientRect();
         const nx=((e.clientX-r.left)/r.width-.5)*2, ny=((e.clientY-r.top)/r.height-.5)*2;
         tilt.style.transform=`rotateY(${(nx*10).toFixed(2)}deg) rotateX(${(-ny*7).toFixed(2)}deg)`;
@@ -461,6 +484,409 @@
     const id = new URLSearchParams(location.search).get('item');
     if(id && PRODUCTS.some(p=>p.id===id)) selectProduct(id);
   }
+</script>
+
+<!-- ============================================================
+     LL3D — Little Layers 3D preview engine (three.js, procedural).
+     Loads as a module; if it fails (old browser, no WebGL, CDN down)
+     the page silently keeps the original SVG previews.
+     ============================================================ -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ---------- shared palette helpers (mirror build.html) ---------- */
+const SWATCHES = { Yellow:'#FAD24A', Purple:'#A77BD8', Green:'#7FC889', Orange:'#F4813C', Blue:'#5EB7DA', Pink:'#F08CB0' };
+function shade(hex, amt){
+  const n = parseInt(hex.slice(1),16); let r=(n>>16)+amt, g=((n>>8)&255)+amt, b=(n&255)+amt;
+  r=Math.max(0,Math.min(255,r)); g=Math.max(0,Math.min(255,g)); b=Math.max(0,Math.min(255,b));
+  return '#'+(r<<16|g<<8|b).toString(16).padStart(6,'0');
+}
+/* real prints use white script nearly always — dark ink only on very light colors (Yellow) */
+function readableOn(hex){ const n=parseInt(hex.slice(1),16); const L=0.299*(n>>16)+0.587*((n>>8)&255)+0.114*(n&255); return L>200?'#2B2530':'#ffffff'; }
+
+/* ---------- engine state ---------- */
+let renderer=null, scene=null, camera=null, controls=null, stageEl=null;
+let group=null;            // current product group
+let colorSetters={};       // layerKey -> [fn(hexColorString)]
+let nameSetter=null;       // fn(str) | null
+let viewHint=null;         // builders may set {side,up,fwd} camera direction weights
+let currentId=null, lastState=null;
+let fontReady=false;
+document.fonts.load('96px Pacifico').then(()=>{ fontReady=true; if(nameSetter&&lastState) nameSetter(lastState.name||''); }).catch(()=>{});
+
+/* matte 3D-printed plastic */
+function plastic(hex,opts={}){
+  return new THREE.MeshPhysicalMaterial(Object.assign({
+    color:hex, roughness:.48, metalness:0, clearcoat:.3, clearcoatRoughness:.55,
+    side:THREE.DoubleSide, envMapIntensity:.55
+  },opts));
+}
+/* register a material under a layer key. tf transforms the base hex (e.g. darker cavity). */
+function reg(key, m, tf){ (colorSetters[key]=colorSetters[key]||[]).push(hex=>{ m.color.set(tf?tf(hex):hex); }); return m; }
+
+/* ---------- geometry: sweep a radial profile around Y ----------
+   profile: [[r,y],...]  mFn: radius modulator per angle  scaleZ: oval squash */
+function sweptGeo({profile, seg=160, mFn=null, scaleZ=1, thetaStart=0, thetaLen=Math.PI*2, flipU=false}){
+  const pos=[], idx=[], uv=[], rows=profile.length;
+  for(let i=0;i<=seg;i++){
+    const t=i/seg, a=thetaStart+t*thetaLen, m=mFn?mFn(a):1;
+    const ca=Math.cos(a), sa=Math.sin(a);
+    for(let j=0;j<rows;j++){
+      const r=profile[j][0]*m, y=profile[j][1];
+      pos.push(r*ca, y, r*sa*scaleZ);
+      uv.push(flipU?1-t:t, j/(rows-1));
+    }
+  }
+  for(let i=0;i<seg;i++) for(let j=0;j<rows-1;j++){
+    const a=i*rows+j, b=a+rows;
+    idx.push(a,b,a+1, b,b+1,a+1);
+  }
+  const g=new THREE.BufferGeometry();
+  g.setIndex(idx);
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv,2));
+  g.computeVertexNormals();
+  return g;
+}
+/* open-top container: closed bottom, walls, flat lip, inner cavity + floor */
+function containerGeo({R, wall=.55, H, floorTh=.7, seg=160, mFn=null, scaleZ=1}){
+  const Ri=R-wall;
+  return sweptGeo({profile:[[.02,0],[R*.99,0],[R,.25],[R,H-.12],[R-wall*.5,H],[Ri,H-.12],[Ri,floorTh],[.02,floorTh]], seg, mFn, scaleZ});
+}
+function rrectShape(w,h,r){
+  const s=new THREE.Shape(), x=-w/2, y=-h/2;
+  s.moveTo(x+r,y); s.lineTo(x+w-r,y); s.quadraticCurveTo(x+w,y,x+w,y+r);
+  s.lineTo(x+w,y+h-r); s.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  s.lineTo(x+r,y+h); s.quadraticCurveTo(x,y+h,x,y+h-r);
+  s.lineTo(x,y+r); s.quadraticCurveTo(x,y,x+r,y);
+  return s;
+}
+function extrude(shape, depth, opts={}){
+  return new THREE.ExtrudeGeometry(shape, Object.assign({depth, bevelEnabled:true, bevelThickness:.1, bevelSize:.1, bevelSegments:2, curveSegments:24},opts));
+}
+/* canvas-texture helpers */
+function makeTex(w,h,draw){
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  draw(c.getContext('2d'),w,h);
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8;
+  t.userData={canvas:c};
+  return t;
+}
+function redrawTex(t,draw){ const c=t.userData.canvas; draw(c.getContext('2d'),c.width,c.height); t.needsUpdate=true; }
+function drawName(ctx,w,h,text,ink){
+  ctx.clearRect(0,0,w,h);
+  if(!text) return;
+  const fs=Math.round(h*.62);
+  ctx.font=fs+'px Pacifico, cursive'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  let m=ctx.measureText(text), sc=Math.min(1,(w*.88)/Math.max(1,m.width));
+  ctx.save(); ctx.translate(w/2,h/2); ctx.scale(sc,sc);
+  ctx.shadowColor='rgba(0,0,0,.30)'; ctx.shadowBlur=10; ctx.shadowOffsetY=7;
+  ctx.fillStyle=ink; ctx.fillText(text,0,6);
+  ctx.shadowColor='transparent';
+  ctx.fillStyle='rgba(255,255,255,.28)'; ctx.fillText(text,0,1);
+  ctx.fillStyle=ink; ctx.globalAlpha=.92; ctx.fillText(text,0,4); ctx.globalAlpha=1;
+  ctx.restore();
+}
+function contactShadow(radius){
+  const t=makeTex(256,256,(x,w,h)=>{
+    const g=x.createRadialGradient(w/2,h/2,10,w/2,h/2,w/2);
+    g.addColorStop(0,'rgba(40,20,35,.34)'); g.addColorStop(.55,'rgba(40,20,35,.13)'); g.addColorStop(1,'rgba(40,20,35,0)');
+    x.fillStyle=g; x.fillRect(0,0,w,h);
+  });
+  const m=new THREE.Mesh(new THREE.CircleGeometry(radius,48), new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false}));
+  m.rotation.x=-Math.PI/2; m.position.y=.02; m.renderOrder=-1;
+  return m;
+}
+
+/* ============================ PRODUCT BUILDERS ============================
+   Each returns nothing; it populates `group`, `colorSetters`, `nameSetter`. */
+
+function buildRoundCaddy(){
+  const R=7, sz=.82, H=9, wall=.6;
+  const bodyM = reg('body', plastic('#F4813C'));
+  const cavM  = reg('body', plastic('#F4813C'), h=>shade(h,-48));
+  const divM  = reg('body', plastic('#F4813C'), h=>shade(h,-20));
+  const hM    = reg('handle', plastic('#FAD24A'));
+
+  const body=new THREE.Mesh(containerGeo({R,wall,H,floorTh:.8,seg:128,scaleZ:sz}), bodyM);
+  group.add(body);
+  // inner cavity tint (slightly inset open cylinder, back side)
+  const cav=new THREE.Mesh(sweptGeo({profile:[[R-wall-.05,.9],[R-wall-.05,H-.35]],seg:96,scaleZ:sz}), cavM);
+  cavM.side=THREE.BackSide; group.add(cav);
+  // dividers: 2 rows x 3 cols
+  const dh=H-1.9, dy=.8+dh/2;
+  const d1=new THREE.Mesh(new THREE.BoxGeometry(2*(R-wall)-.7, dh, .34), divM); d1.position.y=dy; group.add(d1);
+  for(const px of [-2.85,2.85]){
+    const zr=(R-wall)*sz*Math.sqrt(Math.max(.1,1-(px/(R-wall))**2));
+    const d=new THREE.Mesh(new THREE.BoxGeometry(.34, dh, 2*zr-.5), divM); d.position.set(px,dy,0); group.add(d);
+  }
+  // strap handle: arch in XY extruded thin in Z
+  const g=.35, th=1.15, Ri=R+g, Ro=Ri+th, yA=H+.8, yLeg=.4;
+  const s=new THREE.Shape();
+  s.moveTo(-Ro,yLeg); s.lineTo(-Ro,yA); s.absarc(0,yA,Ro,Math.PI,0,true); s.lineTo(Ro,yLeg);
+  s.lineTo(Ri,yLeg); s.lineTo(Ri,yA); s.absarc(0,yA,Ri,0,Math.PI,false); s.lineTo(-Ri,yLeg);
+  s.closePath();
+  const strap=new THREE.Mesh(extrude(s,2.6,{bevelThickness:.12,bevelSize:.12}), hM);
+  strap.position.z=-1.3; group.add(strap);
+  // printed name — curved decal hugging the front (+z is at theta=PI/2)
+  const nt=makeTex(1024,300,x=>x.clearRect(0,0,1024,300));
+  const dec=new THREE.Mesh(
+    sweptGeo({profile:[[R+.09,1.7],[R+.09,4.8]],seg:64,scaleZ:sz,thetaStart:Math.PI/2-.68,thetaLen:1.36,flipU:true}),
+    new THREE.MeshBasicMaterial({map:nt,transparent:true,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2})
+  );
+  dec.renderOrder=2; group.add(dec);
+  let curName='';
+  nameSetter=(nm)=>{ curName=nm||''; redrawTex(nt,(x,w,h)=>drawName(x,w,h,curName, readableOn(SWATCHES[lastState?.body||'Orange']||'#F4813C'))); };
+  // re-ink name when body color changes
+  (colorSetters.body=colorSetters.body||[]).push(()=>{ if(nameSetter) nameSetter(curName); });
+  group.add(contactShadow(R*1.5));
+}
+
+function buildRibbedCaddy(){
+  const R=9.5, sz=.62, H=7.5, wall=.6;
+  const ribs=a=>1+.02*Math.sin(a*110);
+  const bodyM=reg('body', plastic('#A77BD8'));
+  const cavM =reg('body', plastic('#A77BD8'), h=>shade(h,-48));
+  const divM =reg('body', plastic('#A77BD8'), h=>shade(h,-18));
+  const hM   =reg('handle', plastic('#F08CB0'));
+  group.add(new THREE.Mesh(containerGeo({R,wall,H,floorTh:.8,seg:520,mFn:ribs,scaleZ:sz}), bodyM));
+  const cav=new THREE.Mesh(sweptGeo({profile:[[R-wall-.08,.9],[R-wall-.08,H-.3]],seg:96,scaleZ:sz}), cavM);
+  cavM.side=THREE.BackSide; group.add(cav);
+  // interior walls: long wall split around the plate + two cross walls
+  const dh=H-1.6, dy=.8+dh/2;
+  for(const sgn of [-1,1]){
+    const w=new THREE.Mesh(new THREE.BoxGeometry(R-wall-4.0, dh, .34), divM);
+    w.position.set(sgn*((4.0+R-wall)/2), dy, 0); group.add(w);
+  }
+  for(const px of [-4.0,4.0]){
+    const zr=(R-wall)*sz*Math.sqrt(Math.max(.1,1-(px/(R-wall))**2));
+    const d=new THREE.Mesh(new THREE.BoxGeometry(.34, dh, 2*zr-.4), divM); d.position.set(px,dy,0); group.add(d);
+  }
+  // flat plate handle with oval grip hole
+  const pw=8.2, pTop=H+6.8, pr=1.7;
+  const sh=new THREE.Shape();
+  sh.moveTo(-pw/2,1); sh.lineTo(-pw/2,pTop-pr); sh.quadraticCurveTo(-pw/2,pTop,-pw/2+pr,pTop);
+  sh.lineTo(pw/2-pr,pTop); sh.quadraticCurveTo(pw/2,pTop,pw/2,pTop-pr); sh.lineTo(pw/2,1); sh.closePath();
+  const hole=new THREE.Path();
+  const hw=5.2,hh=3.2,hy=pTop-2.9,hr=1.55;
+  hole.moveTo(-hw/2+hr,hy-hh/2); hole.lineTo(hw/2-hr,hy-hh/2); hole.quadraticCurveTo(hw/2,hy-hh/2,hw/2,hy-hh/2+hr);
+  hole.lineTo(hw/2,hy+hh/2-hr); hole.quadraticCurveTo(hw/2,hy+hh/2,hw/2-hr,hy+hh/2);
+  hole.lineTo(-hw/2+hr,hy+hh/2); hole.quadraticCurveTo(-hw/2,hy+hh/2,-hw/2,hy+hh/2-hr);
+  hole.lineTo(-hw/2,hy-hh/2+hr); hole.quadraticCurveTo(-hw/2,hy-hh/2,-hw/2+hr,hy-hh/2);
+  sh.holes.push(hole);
+  const plate=new THREE.Mesh(extrude(sh,.55,{bevelThickness:.09,bevelSize:.09}), hM);
+  plate.position.z=-.275; group.add(plate);
+  group.add(contactShadow(R*1.35));
+}
+
+/* one wavy tray; returns {grp,setColor,setName} */
+function makeTray({R=8.3, sz=.42, H=3.3, lobes=13, amp=.11, key, withName=false}){
+  const grp=new THREE.Group();
+  const wave=a=>1+amp*Math.sin(a*lobes);
+  const wallM=reg(key, plastic('#5EB7DA'));
+  grp.add(new THREE.Mesh(containerGeo({R,wall:.6,H,floorTh:.55,seg:480,mFn:wave,scaleZ:sz}), wallM));
+  // woven net floor: white canvas with dark crosshatch, tinted via material.color
+  const netT=makeTex(1024,512,(x,w,h)=>{
+    x.fillStyle='#fff'; x.fillRect(0,0,w,h);
+    x.strokeStyle='rgba(0,0,0,.55)'; x.lineWidth=8;
+    for(let d=-h;d<w+h;d+=20){
+      x.beginPath(); x.moveTo(d,0); x.lineTo(d+h,h); x.stroke();
+      x.beginPath(); x.moveTo(d+h,0); x.lineTo(d,h); x.stroke();
+    }
+  });
+  const floorM=new THREE.MeshStandardMaterial({map:netT, roughness:.8, color:'#5EB7DA'});
+  (colorSetters[key]=colorSetters[key]||[]).push(hex=>floorM.color.set(shade(hex,-16)));
+  const fl=new THREE.Mesh(new THREE.CircleGeometry(R-.72,96), floorM);
+  fl.rotation.x=-Math.PI/2; fl.scale.y=sz; fl.position.y=.6; grp.add(fl);
+  let setName=null;
+  if(withName){
+    const nt=makeTex(1024,360,x=>x.clearRect(0,0,1024,360));
+    const nm=new THREE.Mesh(new THREE.PlaneGeometry((R-1.2)*1.5,(R-1.2)*1.5*(360/1024)),
+      new THREE.MeshBasicMaterial({map:nt,transparent:true,depthWrite:false}));
+    nm.rotation.x=-Math.PI/2; nm.position.y=.72; grp.add(nm);
+    let cur='';
+    setName=(t)=>{ cur=t||''; redrawTex(nt,(x,w,h)=>drawName(x,w,h,cur, readableOn(shade(SWATCHES[lastState?.body||'Green']||'#7FC889',-16)))); };
+    colorSetters[key].push(()=>setName(cur));
+  }
+  return {grp,setName};
+}
+function buildDoodleSmall(){
+  const t1=makeTray({key:'col1'});                       // front tray, flat
+  t1.grp.position.z=3.0; t1.grp.rotation.y=.10; group.add(t1.grp);
+  const t2=makeTray({key:'col2'});                       // back tray, leaning to show the net
+  t2.grp.scale.setScalar(.92);
+  t2.grp.rotation.x=Math.PI*.34;                         // tilt the open face toward camera
+  t2.grp.position.set(.4, 2.3, -5.8);
+  group.add(t2.grp);
+  group.add(contactShadow(11.5));
+  viewHint={side:.25,up:.62,fwd:.75};
+}
+function buildDoodleLarge(){
+  const t=makeTray({key:'body', withName:true});
+  t.grp.scale.setScalar(1.25); group.add(t.grp);
+  nameSetter=t.setName;
+  group.add(contactShadow(12.5));
+  viewHint={side:.22,up:.95,fwd:.60};
+}
+
+function buildFlower(){
+  const bodyM=reg('body', plastic('#5EB7DA'));
+  const bodyCav=reg('body', plastic('#5EB7DA'), h=>shade(h,-42));
+  const petM =reg('flower', plastic('#F08CB0'));
+  const petCav=reg('flower', plastic('#F08CB0'), h=>shade(h,-42));
+  // outer flower-lobed ribbed wall — lobes aligned with the petal cups
+  const m=a=>(1-.15*Math.cos(6*a))*(1+.013*Math.sin(a*90));
+  group.add(new THREE.Mesh(containerGeo({R:7.0,wall:.5,H:7.1,floorTh:.7,seg:540,mFn:m}), bodyM));
+  // 6 hex petal cups + center round cup
+  const cupProfile=(R,H)=>[[.02,.35],[R,.35],[R,H],[R-.42,H],[R-.42,1.1],[.02,1.1]];
+  for(let i=0;i<6;i++){
+    const a=i*Math.PI/3 - Math.PI/2;
+    const cup=new THREE.Mesh(sweptGeo({profile:cupProfile(2.62,8.6),seg:6,thetaStart:a+Math.PI/6}), petM);
+    cup.position.set(Math.cos(a)*4.35,0,Math.sin(a)*4.35);
+    group.add(cup);
+    const ci=new THREE.Mesh(sweptGeo({profile:[[2.18,1.1],[2.18,8.3]],seg:6,thetaStart:a+Math.PI/6}), petCav);
+    petCav.side=THREE.BackSide;
+    ci.position.copy(cup.position); group.add(ci);
+  }
+  const cen=new THREE.Mesh(sweptGeo({profile:cupProfile(2.3,8.9),seg:64}), bodyM); group.add(cen);
+  const cenI=new THREE.Mesh(sweptGeo({profile:[[1.86,1.1],[1.86,8.6]],seg:48}), bodyCav);
+  bodyCav.side=THREE.BackSide; group.add(cenI);
+  group.add(contactShadow(10.5));
+}
+
+function buildDrawella(){
+  const W=19, D=8.6, r=2.3, lvl=4.0, trayH=2.3;
+  // vertical rib stripes for the drawer bodies (map tints with material color)
+  function ribTex(){
+    const t=makeTex(256,64,(x,w,h)=>{
+      x.fillStyle='#fff'; x.fillRect(0,0,w,h);
+      for(let px=0;px<w;px+=10){
+        x.fillStyle='rgba(0,0,0,.16)'; x.fillRect(px,0,4,h);
+        x.fillStyle='rgba(255,255,255,.3)'; x.fillRect(px+4,0,2,h);
+      }
+    });
+    // ExtrudeGeometry side-wall UVs are in world units — scale so one tile ≈ 14 units of contour
+    t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(.072,.24); t.colorSpace=THREE.SRGBColorSpace;
+    return t;
+  }
+  const topM=reg('top', plastic('#A77BD8'));
+  const topS=reg('top', plastic('#A77BD8',{map:ribTex()}));
+  const topF=reg('top', plastic('#A77BD8', {}), h=>shade(h,8));
+  const topN=reg('top', plastic('#A77BD8'), h=>shade(h,-64));
+  const botM=reg('bottom', plastic('#5EB7DA'));
+  const botS=reg('bottom', plastic('#5EB7DA',{map:ribTex()}));
+  const botF=reg('bottom', plastic('#5EB7DA', {}), h=>shade(h,8));
+  const botN=reg('bottom', plastic('#5EB7DA'), h=>shade(h,-64));
+  const cream=plastic('#F5F1EB'), creamIn=plastic('#DDD3C5');
+  function level(faceMat, sideMat, y, h, ow=0){
+    const g=extrude(rrectShape(W+ow,D+ow,r), h, {bevelThickness:.12,bevelSize:.12,curveSegments:20});
+    const m=new THREE.Mesh(g, [faceMat, sideMat]);   // 0=caps, 1=side walls
+    m.rotation.x=-Math.PI/2; m.position.y=y;
+    return m;
+  }
+  group.add(level(botM, botS, 0, lvl-.15));
+  group.add(level(topM, topS, lvl, lvl-.15));
+  group.add(level(cream, cream, lvl*2, trayH, .7));   // white tray with slight overhang
+  // white tray cavity + 2 dividers
+  const cav=new THREE.Mesh(extrude(rrectShape(W-1.2,D-1.2,r*.8), .4, {bevelEnabled:false}), creamIn);
+  cav.rotation.x=-Math.PI/2; cav.position.y=lvl*2+trayH-.5; group.add(cav);
+  for(const dx of [-W/6, W/6]){
+    const dv=new THREE.Mesh(new THREE.BoxGeometry(.4, 1.2, D-1.4), cream);
+    dv.position.set(dx*1.0, lvl*2+trayH-.75, 0); group.add(dv);
+  }
+  // drawer front plates: smooth plate + semicircular notch cut into the top edge
+  function front(mat, notchMat, y){
+    const fw=W-2.8, fh=lvl-1.15, nr=1.5;
+    const s=new THREE.Shape(), x0=-fw/2, y0=-fh/2, cr=.7;
+    s.moveTo(x0+cr,y0); s.lineTo(x0+fw-cr,y0); s.quadraticCurveTo(x0+fw,y0,x0+fw,y0+cr);
+    s.lineTo(x0+fw,y0+fh); s.lineTo(nr,y0+fh);
+    s.absarc(0,y0+fh,nr,0,Math.PI,true);   // clockwise → dips INTO the plate
+    s.lineTo(x0,y0+fh); s.lineTo(x0,y0+cr); s.quadraticCurveTo(x0,y0,x0+cr,y0);
+    s.closePath();
+    const pl=new THREE.Mesh(extrude(s,.4,{bevelThickness:.08,bevelSize:.08}), mat);
+    pl.position.set(0,y,D/2+.12);
+    const bk=new THREE.Mesh(new THREE.CircleGeometry(nr*.92,32,Math.PI,Math.PI), notchMat);
+    bk.position.set(0,y+fh/2,D/2+.06);
+    const gposs=new THREE.Group(); gposs.add(pl,bk); return gposs;
+  }
+  group.add(front(topF, topN, lvl+(lvl-.15)/2));
+  group.add(front(botF, botN, (lvl-.15)/2));
+  group.add(contactShadow(13));
+}
+
+const BUILDERS={ orangecaddy:buildRoundCaddy, purplecaddy:buildRibbedCaddy,
+  doodlesmall:buildDoodleSmall, doodlelarge:buildDoodleLarge,
+  flowerholder:buildFlower, drawella:buildDrawella };
+
+/* ---------- mount / show / apply ---------- */
+function mount(el){
+  stageEl=el;
+  try{
+    renderer=new THREE.WebGLRenderer({antialias:true, alpha:true});
+  }catch(e){ return false; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.domElement.style.cssText='position:absolute;inset:0;width:100%;height:100%;';
+  el.style.position='relative';
+  el.appendChild(renderer.domElement);
+  scene=new THREE.Scene();
+  const pm=new THREE.PMREMGenerator(renderer);
+  scene.environment=pm.fromScene(new RoomEnvironment(), .04).texture;
+  camera=new THREE.PerspectiveCamera(30, 1, .1, 400);
+  scene.add(new THREE.HemisphereLight(0xfff6f2, 0xe9dbd2, .75));
+  const key=new THREE.DirectionalLight(0xffffff, 1.15); key.position.set(6,14,9); scene.add(key);
+  const fill=new THREE.DirectionalLight(0xcfeaf2, .35); fill.position.set(-9,5,-7); scene.add(fill);
+  controls=new OrbitControls(camera, renderer.domElement);
+  controls.enablePan=false; controls.enableZoom=false; controls.enableDamping=true; controls.dampingFactor=.08;
+  controls.autoRotate=true; controls.autoRotateSpeed=1.5;
+  controls.minPolarAngle=.5; controls.maxPolarAngle=1.52;
+  renderer.domElement.style.touchAction='pan-y';  // let vertical swipes scroll the page on touch
+  const size=()=>{ const w=el.clientWidth,h=el.clientHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); };
+  new ResizeObserver(size).observe(el); size();
+  renderer.setAnimationLoop(()=>{ controls.update(); renderer.render(scene,camera); });
+  return true;
+}
+function clearProduct(){
+  if(!group) return;
+  scene.remove(group);
+  group.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material){ (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{ if(m.map) m.map.dispose(); m.dispose(); }); } });
+  group=null; colorSetters={}; nameSetter=null; viewHint=null;
+}
+function show(id, state){
+  if(!renderer) return;
+  lastState=Object.assign({},state);
+  if(currentId!==id){
+    clearProduct();
+    currentId=id;
+    group=new THREE.Group();
+    (BUILDERS[id]||(()=>{}))();
+    scene.add(group);
+    // frame camera on the product
+    const box=new THREE.Box3().setFromObject(group);
+    const c=box.getCenter(new THREE.Vector3()), s=box.getSize(new THREE.Vector3());
+    const rad=Math.max(s.x,s.y,s.z)*.62;
+    const dist=rad/Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*1.12;
+    controls.target.set(0, c.y*.92, 0);
+    const vh=viewHint||{side:.30,up:.34,fwd:.90};
+    camera.position.set(dist*vh.side, c.y+dist*vh.up, dist*vh.fwd);
+    camera.lookAt(controls.target);
+    controls.update();
+  }
+  apply(state);
+}
+function apply(state){
+  if(!renderer||!group) return;
+  lastState=Object.assign({},state);
+  for(const k in colorSetters){
+    const nm=state[k]; if(!nm) continue;
+    const hex=SWATCHES[nm]||nm;
+    colorSetters[k].forEach(fn=>fn(hex));
+  }
+  if(nameSetter) nameSetter(state.name||'');
+}
+window.LL3D={ ready:false, mount(el){ const ok=mount(el); window.LL3D.ready=ok; return ok; }, show, apply, has:id=>!!BUILDERS[id], productIds:Object.keys(BUILDERS) };
+window.dispatchEvent(new Event('ll3d-ready'));
 </script>
 </body>
 </html>
