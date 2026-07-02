@@ -4,6 +4,13 @@
 
 const Stripe = require('stripe');
 
+// Shared Stripe account (also used by Odyssey VR): only show Little Layers orders.
+// Matches our project tag, or (for pre-tag orders) a success_url on our site.
+function isLittleLayers(s) {
+  if (s && s.metadata && s.metadata.project === 'little-layers') return true;
+  return /little-?layers/i.test(String((s && s.success_url) || ''));
+}
+
 module.exports = async (req, res) => {
   const secret = process.env.STRIPE_SECRET_KEY;
   const pw = process.env.ORDERS_PASSWORD;
@@ -15,8 +22,10 @@ module.exports = async (req, res) => {
 
   const stripe = Stripe(secret);
   try {
-    const list = await stripe.checkout.sessions.list({ limit: 40 });
-    const paid = list.data.filter((s) => s.payment_status === 'paid').slice(0, 25);
+    const list = await stripe.checkout.sessions.list({ limit: 100 });
+    const paid = list.data
+      .filter((s) => s.payment_status === 'paid' && isLittleLayers(s))
+      .slice(0, 25);
 
     const orders = [];
     for (const s of paid) {

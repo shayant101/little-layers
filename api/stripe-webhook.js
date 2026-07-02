@@ -12,6 +12,14 @@
 
 const Stripe = require('stripe');
 
+// The Stripe account is shared with another Vbild project (Odyssey VR).
+// Only treat a session as a Little Layers order if it carries our project tag,
+// or (for orders placed before tagging shipped) its success_url is our site.
+function isLittleLayers(s) {
+  if (s && s.metadata && s.metadata.project === 'little-layers') return true;
+  return /little-?layers/i.test(String((s && s.success_url) || ''));
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -36,6 +44,11 @@ module.exports = async (req, res) => {
     const s = await stripe.checkout.sessions.retrieve(event.data.object.id, {
       expand: ['line_items', 'shipping_cost.shipping_rate'],
     });
+
+    // Ignore orders from other projects on the shared Stripe account (e.g. Odyssey VR).
+    if (!isLittleLayers(s)) {
+      return res.status(200).json({ ignored: 'not-little-layers' });
+    }
 
     const cd = s.customer_details || {};
     const sd = s.shipping_details || null;

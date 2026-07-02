@@ -62,6 +62,10 @@ module.exports = async (req, res) => {
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
+      // Tag every Little Layers order so the shared Stripe account (also used by
+      // Odyssey VR) can be filtered. The webhook + Orders API only act on these.
+      metadata: { project: 'little-layers' },
+      payment_intent_data: { metadata: { project: 'little-layers' } },
       line_items,
       success_url: `${origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/?canceled=1`,
