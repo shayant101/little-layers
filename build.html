@@ -681,14 +681,56 @@ function buildRibbedCaddy(){
   group.add(contactShadow(R*1.35));
 }
 
-/* one wavy tray; returns {grp,setColor,setName} */
-function makeTray({R=8.3, sz=.42, H=3.3, lobes=13, amp=.11, key, withName=false}){
+/* wavy outline with CONSTANT-SIZE scallops: base ellipse sampled uniformly by
+   arc length, offset along the outward normal by a sine of arc position.
+   (Angle-based waves bunch up at the ends of an elongated shape — the real
+   dish has identical bumps all the way around, like a row of touching beads.) */
+function wavyOutline({L, Wd, n, amp, inset=0, N=520}){
+  // base curve is a STADIUM (straight sides + semicircular ends): its radius of
+  // curvature is never below Wd/2, so normal offsets can't create cusps.
+  const r=Wd/2, hs=L/2-r;                 // half straight length
+  const Pc=Math.PI*r;                     // each semicircular end
+  const straight=2*hs;                    // each straight side
+  const perim=2*straight+2*Pc;
+  const pts=[];
+  for(let i=0;i<N;i++){
+    let s=i/N*perim, x,y,nx,ny;
+    if(s<straight){                                   // top edge, left→right
+      x=-hs+s; y=r; nx=0; ny=1;
+    } else if(s<straight+Pc){                         // right semicircle
+      const t=(s-straight)/Pc*Math.PI;                // 0..π
+      const a2=Math.PI/2-t;                           // from +y around to -y
+      x=hs+r*Math.cos(a2); y=r*Math.sin(a2); nx=Math.cos(a2); ny=Math.sin(a2);
+    } else if(s<2*straight+Pc){                       // bottom edge, right→left
+      const d=s-straight-Pc; x=hs-d; y=-r; nx=0; ny=-1;
+    } else {                                          // left semicircle
+      const t=(s-2*straight-Pc)/Pc*Math.PI;
+      const a2=-Math.PI/2-t;
+      x=-hs+r*Math.cos(a2); y=r*Math.sin(a2); nx=Math.cos(a2); ny=Math.sin(a2);
+    }
+    // shaped sine: |sin|^0.7 keeps crests round and full, like a row of beads
+    const w=Math.sin(n*2*Math.PI*s/perim);
+    const off=amp*Math.sign(w)*Math.pow(Math.abs(w),.7)-inset;
+    pts.push(new THREE.Vector2(x+nx*off, y+ny*off));
+  }
+  return pts;
+}
+/* one pencil-tray dish; walls are a vertical extrusion of the wavy outline */
+function makeTray({L=18, Wd=6.2, H=3.0, n=20, amp=.5, wall=.6, key, netKey=null, withName=false}){
   const grp=new THREE.Group();
-  const wave=a=>1+amp*Math.sin(a*lobes);
+  const Lb=L-2*amp, Wb=Wd-2*amp;          // base stadium sized so peaks hit L×Wd
+  const outer=wavyOutline({L:Lb,Wd:Wb,n,amp});
+  const inner=wavyOutline({L:Lb,Wd:Wb,n,amp,inset:wall});
   const wallM=reg(key, plastic('#5EB7DA'));
-  grp.add(new THREE.Mesh(containerGeo({R,wall:.6,H,floorTh:.55,seg:480,mFn:wave,scaleZ:sz}), wallM));
-  // woven net floor: white canvas with dark crosshatch, tinted via material.color
-  const netT=makeTex(1024,512,(x,w,h)=>{
+  const sh=new THREE.Shape(outer);
+  const hole=new THREE.Path(inner.slice().reverse()); sh.holes.push(hole);
+  const wallMesh=new THREE.Mesh(new THREE.ExtrudeGeometry(sh,{depth:H-.3,bevelEnabled:true,bevelThickness:.15,bevelSize:.15,bevelSegments:2}), wallM);
+  wallMesh.rotation.x=-Math.PI/2; wallMesh.position.y=.3; grp.add(wallMesh);
+  // solid base slab (closes the bottom)
+  const base=new THREE.Mesh(new THREE.ExtrudeGeometry(new THREE.Shape(outer),{depth:.45,bevelEnabled:true,bevelThickness:.12,bevelSize:.12,bevelSegments:2}), wallM);
+  base.rotation.x=-Math.PI/2; base.position.y=.14; grp.add(base);
+  // woven net floor — on the real dish this is the CONTRASTING color of the set
+  const netT=makeTex(1024,1024,(x,w,h)=>{
     x.fillStyle='#fff'; x.fillRect(0,0,w,h);
     x.strokeStyle='rgba(0,0,0,.55)'; x.lineWidth=8;
     for(let d=-h;d<w+h;d+=20){
@@ -696,16 +738,19 @@ function makeTray({R=8.3, sz=.42, H=3.3, lobes=13, amp=.11, key, withName=false}
       x.beginPath(); x.moveTo(d+h,0); x.lineTo(d,h); x.stroke();
     }
   });
-  const floorM=new THREE.MeshStandardMaterial({map:netT, roughness:.8, color:'#5EB7DA'});
-  (colorSetters[key]=colorSetters[key]||[]).push(hex=>floorM.color.set(shade(hex,-16)));
-  const fl=new THREE.Mesh(new THREE.CircleGeometry(R-.72,96), floorM);
-  fl.rotation.x=-Math.PI/2; fl.scale.y=sz; fl.position.y=.6; grp.add(fl);
+  netT.wrapS=netT.wrapT=THREE.RepeatWrapping; netT.repeat.set(.055,.055);
+  const floorM=new THREE.MeshStandardMaterial({map:netT, roughness:.85, color:'#A77BD8'});
+  const fk=netKey||key;
+  (colorSetters[fk]=colorSetters[fk]||[]).push(hex=>floorM.color.set(netKey?hex:shade(hex,-45)));
+  const fl=new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(wavyOutline({L:Lb,Wd:Wb,n,amp,inset:wall+.15}))), floorM);
+  fl.rotation.x=-Math.PI/2; fl.position.y=.80; grp.add(fl);   // above the base slab's bevel (~.71)
   let setName=null;
   if(withName){
     const nt=makeTex(1024,360,x=>x.clearRect(0,0,1024,360));
-    const nm=new THREE.Mesh(new THREE.PlaneGeometry((R-1.2)*1.5,(R-1.2)*1.5*(360/1024)),
+    const nw=L*.62;
+    const nm=new THREE.Mesh(new THREE.PlaneGeometry(nw,nw*(360/1024)),
       new THREE.MeshBasicMaterial({map:nt,transparent:true,depthWrite:false}));
-    nm.rotation.x=-Math.PI/2; nm.position.y=.72; grp.add(nm);
+    nm.rotation.x=-Math.PI/2; nm.position.y=.92; grp.add(nm);
     let cur='';
     setName=(t)=>{ cur=t||''; redrawTex(nt,(x,w,h)=>drawName(x,w,h,cur, readableOn(shade(SWATCHES[lastState?.body||'Green']||'#7FC889',-16)))); };
     colorSetters[key].push(()=>setName(cur));
@@ -713,21 +758,21 @@ function makeTray({R=8.3, sz=.42, H=3.3, lobes=13, amp=.11, key, withName=false}
   return {grp,setName};
 }
 function buildDoodleSmall(){
-  const t1=makeTray({key:'col1'});                       // front tray, flat
-  t1.grp.position.z=3.0; t1.grp.rotation.y=.10; group.add(t1.grp);
-  const t2=makeTray({key:'col2'});                       // back tray, leaning to show the net
-  t2.grp.scale.setScalar(.92);
+  const t1=makeTray({key:'col1', netKey:'col2'});        // front tray, flat — net in the other color
+  t1.grp.position.z=3.4; t1.grp.rotation.y=.08; group.add(t1.grp);
+  const t2=makeTray({key:'col2', netKey:'col1'});        // back tray, leaning to show the net
+  t2.grp.scale.setScalar(.94);
   t2.grp.rotation.x=Math.PI*.34;                         // tilt the open face toward camera
-  t2.grp.position.set(.4, 2.3, -5.8);
+  t2.grp.position.set(.3, 2.4, -4.4);
   group.add(t2.grp);
-  group.add(contactShadow(11.5));
+  group.add(contactShadow(12));
   viewHint={side:.25,up:.62,fwd:.75};
 }
 function buildDoodleLarge(){
-  const t=makeTray({key:'body', withName:true});
-  t.grp.scale.setScalar(1.25); group.add(t.grp);
+  const t=makeTray({L:22, Wd:7.6, H:3.4, n:22, amp:.6, key:'body', withName:true});
+  group.add(t.grp);
   nameSetter=t.setName;
-  group.add(contactShadow(12.5));
+  group.add(contactShadow(13));
   viewHint={side:.22,up:.95,fwd:.60};
 }
 
