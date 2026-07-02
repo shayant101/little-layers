@@ -758,15 +758,11 @@ function makeTray({L=18, Wd=6.2, H=3.0, n=20, amp=.5, wall=.6, key, netKey=null,
   return {grp,setName};
 }
 function buildDoodleSmall(){
-  const t1=makeTray({key:'col1', netKey:'col2'});        // front tray, flat — net in the other color
-  t1.grp.position.z=3.4; t1.grp.rotation.y=.08; group.add(t1.grp);
-  const t2=makeTray({key:'col2', netKey:'col1'});        // back tray, leaning to show the net
-  t2.grp.scale.setScalar(.94);
-  t2.grp.rotation.x=Math.PI*.34;                         // tilt the open face toward camera
-  t2.grp.position.set(.3, 2.4, -4.4);
-  group.add(t2.grp);
-  group.add(contactShadow(12));
-  viewHint={side:.25,up:.62,fwd:.75};
+  // one dish: Color 1 = wavy walls, Color 2 = the woven net floor
+  const t=makeTray({key:'col1', netKey:'col2'});
+  group.add(t.grp);
+  group.add(contactShadow(11.5));
+  viewHint={side:.22,up:.95,fwd:.60};
 }
 function buildDoodleLarge(){
   const t=makeTray({L:22, Wd:7.6, H:3.4, n:22, amp:.6, key:'body', withName:true});
